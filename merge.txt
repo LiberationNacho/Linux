@@ -1,6 +1,6 @@
 hello_world
 hello_PuTTY
-hello_issue1
+hello_main
 hello_Linux
 hello_github
 
