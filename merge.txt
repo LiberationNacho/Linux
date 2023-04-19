@@ -1,6 +1,0 @@
-hello_world
-hello_PuTTY
-hello_main
-hello_Linux
-hello_github
-
