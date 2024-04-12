@@ -1,7 +1,3 @@
 merge
-<<<<<<< HEAD
 
 
-=======
-merge
->>>>>>> issue
