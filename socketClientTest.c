@@ -1,9 +1,14 @@
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+// unistd.h는 원래 리눅스용 헤더이지만, VS에는 io.h
+// #include <unistd.h>
+// #include <io.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+// 동일한 이슈
+// #include <sys/socket.h>
+#include <winsock.h>
+// #include <arpa/inet.h>
+#include <ws2tcpip.h>
 
 #define BUFSIZE 1024
 
