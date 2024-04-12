@@ -62,13 +62,6 @@ int main(int argc, char** argv) {
     close(sockfd);
     return 0;
 }*/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <winsock2.h> // winsock.h 대신 winsock2.h 사용
-#include <ws2tcpip.h>
-
-#define BUFSIZE 1024
 
 int main(int argc, char** argv) {
     if (argc != 3) {
