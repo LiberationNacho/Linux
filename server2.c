@@ -35,7 +35,7 @@ void *handle_client(void *arg) {
         int bytes_read = read(cSockfd, buf, sizeof(buf));
         if (bytes_read <= 0) {
             --client_count;
-            printf("Client disconnected. Current client count: %d\n", &client_count);
+            printf("Client disconnected. Current client count: %d\n", client_count);
             // 읽기가 실패하면 클라이언트 연결 종료
             close(cSockfd);
             pthread_exit(NULL);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         }
 
 	    // 현재 연결된 클라이언트 수 출력
-        printf("Client connected. Current client count: %d\n", &client_count);
+        printf("Client connected. Current client count: %d\n", client_count);
     }
 
     // 소켓 닫기
