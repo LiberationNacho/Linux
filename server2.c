@@ -14,50 +14,6 @@ int client_count = 0;
 int clients[MAX_CLIENTS]; // 최대 클라이언트 수만큼의 배열
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // 스레드 동기화를 위한 뮤텍스
 
-/*
-`void *`은 C 언어에서 일반적으로 사용되는 포인터 형식입니다.
-여기서 `handle_client` 함수는 스레드의 시작 루틴으로 사용됩니다.
-스레드의 시작 루틴은 `void *` 형식의 매개변수를 받아야 합니다.
-그러나 실제로는 이 매개변수를 사용하지 않을 수도 있습니다. 때문에 `handle_client` 함수의 매개변수는 `void *` 타입으로 지정됩니다. 
-
-이러한 형태는 일반적으로 스레드 함수에서 특정 데이터나 구조체를 전달할 필요가 있는 경우에 사용됩니다.
-예를 들어, 여기서는 클라이언트 소켓 디스크립터를 스레드로 전달하여 해당 클라이언트와의 통신을 처리합니다.
-이를 위해 `void *` 형식의 포인터를 사용하여 클라이언트 소켓 디스크립터를 전달하고, 함수 내에서 이를 다시 적절한 형식으로 형변환하여 사용합니다.
-*/
-// 클라이언트와의 통신을 담당하는 함수
-void *handle_client(void *arg) {
-    int cSockfd = *((int *)arg);
-    char buf[BUFSIZE];
-
-    // 클라이언트가 보낸 메시지를 받아서 다른 클라이언트에게 전달하고 화면에 출력
-    while (1) {
-        memset(buf, 0, sizeof(buf));
-        int bytes_read = read(cSockfd, buf, sizeof(buf));
-        if (bytes_read <= 0) {
-            --client_count;
-            printf("Client disconnected. Current client count: %d\n", client_count);
-            // 읽기가 실패하면 클라이언트 연결 종료
-            close(cSockfd);
-            pthread_exit(NULL);
-        }
-
-        // 서버가 받은 메시지를 다른 클라이언트에게 전파
-        pthread_mutex_lock(&mutex);
-        printf("Received from client: %s", buf);
-        fflush(stdout);
-
-        // 모든 클라이언트에게 메시지 전송
-        pthread_mutex_lock(&mutex);
-        for (int i = 0; i < MAX_CLIENTS; ++i) {
-            if (clients[i] != -1 && clients[i] != cSockfd) {
-                write(clients[i], buf, strlen(buf)); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
-            }
-        }
-        pthread_mutex_unlock(&mutex);
-    }
-    return NULL;
-}
-
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -160,4 +116,46 @@ int main(int argc, char *argv[]) {
     // 소켓 닫기
     close(sockfd);
     return 0;
+}
+
+/*
+`void *`은 C 언어에서 일반적으로 사용되는 포인터 형식입니다.
+여기서 `handle_client` 함수는 스레드의 시작 루틴으로 사용됩니다.
+스레드의 시작 루틴은 `void *` 형식의 매개변수를 받아야 합니다.
+그러나 실제로는 이 매개변수를 사용하지 않을 수도 있습니다. 때문에 `handle_client` 함수의 매개변수는 `void *` 타입으로 지정됩니다. 
+
+이러한 형태는 일반적으로 스레드 함수에서 특정 데이터나 구조체를 전달할 필요가 있는 경우에 사용됩니다.
+예를 들어, 여기서는 클라이언트 소켓 디스크립터를 스레드로 전달하여 해당 클라이언트와의 통신을 처리합니다.
+이를 위해 `void *` 형식의 포인터를 사용하여 클라이언트 소켓 디스크립터를 전달하고, 함수 내에서 이를 다시 적절한 형식으로 형변환하여 사용합니다.
+*/
+// 클라이언트와의 통신을 담당하는 함수
+void *handle_client(void *arg) {
+    int cSockfd = *((int *)arg);
+    char buf[BUFSIZE];
+
+    // 클라이언트가 보낸 메시지를 받아서 다른 클라이언트에게 전달하고 화면에 출력
+    while (1) {
+        memset(buf, 0, sizeof(buf));
+        int bytes_read = read(cSockfd, buf, sizeof(buf));
+        if (bytes_read <= 0) {
+            printf("Client disconnected. Current client count: %d\n", --client_count);
+            // 읽기가 실패하면 클라이언트 연결 종료
+            close(cSockfd);
+            pthread_exit(NULL);
+        }
+        pthread_mutex_lock(&mutex);
+        
+        printf("Received from client: %s", buf);
+        fflush(stdout);
+
+        // 모든 클라이언트에게 메시지 전송
+        pthread_mutex_lock(&mutex);
+        for (int i = 0; i < MAX_CLIENTS; ++i) {
+            if (clients[i] != -1 && clients[i] != cSockfd) {
+                write(clients[i], buf, strlen(buf)); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
+            }
+        }
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
 }

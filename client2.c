@@ -10,31 +10,6 @@
 
 int sockfd;
 
-// 서버로부터 메시지를 받는 함수
-void *receive_message(void *arg) {
-    char buf[BUFSIZE];
-    while (1) {
-        // 서버가 보낸 응답 받기
-        memset(buf, 0, sizeof(buf));
-        ssize_t bytes_read = read(sockfd, buf, sizeof(buf));
-        if (bytes_read == -1) {
-            perror("read");
-            pthread_exit(NULL);
-        } else if (bytes_read == 0) {
-            printf("Server disconnected.\n");
-            close(sockfd);
-            pthread_exit(NULL);
-        }
-        printf("Server Response: %s\n", buf);
-        // 만약 서버로부터 받은 메시지가 "exit"인 경우 프로그램 종료
-        if (strcmp(buf, "exit\n") == 0) {
-            printf("Exiting...\n");
-            close(sockfd);
-            pthread_exit(NULL); // 스레드 종료
-        }
-    }
-}
-
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <server_ip> <port>\n", argv[0]);
@@ -94,4 +69,29 @@ int main(int argc, char *argv[]) {
     // 연결 종료
     close(sockfd);
     return 0;
+}
+
+// 서버로부터 메시지를 받는 함수
+void *receive_message(void *arg) {
+    char buf[BUFSIZE];
+    while (1) {
+        // 서버가 보낸 응답 받기
+        memset(buf, 0, sizeof(buf));
+        ssize_t bytes_read = read(sockfd, buf, sizeof(buf));
+        if (bytes_read == -1) {
+            perror("read");
+            pthread_exit(NULL);
+        } else if (bytes_read == 0) {
+            printf("Server disconnected.\n");
+            close(sockfd);
+            pthread_exit(NULL);
+        }
+        printf("Server Response: %s\n", buf);
+        // 만약 서버로부터 받은 메시지가 "exit"인 경우 프로그램 종료
+        if (strcmp(buf, "exit\n") == 0) {
+            printf("Exiting...\n");
+            close(sockfd);
+            pthread_exit(NULL); // 스레드 종료
+        }
+    }
 }
