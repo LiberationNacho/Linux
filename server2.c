@@ -48,15 +48,15 @@ void *handle_client(void *arg) {
             close(cSockfd);
             pthread_exit(NULL);
         }
-
         pthread_mutex_lock(&mutex);
+
         printf("Received from client: %s", buf);
         fflush(stdout);
 
         // 모든 클라이언트에게 메시지 전송
         for (int i = 0; i < MAX_CLIENTS; ++i) {
             if (clients[i] != -1 && clients[i] != cSockfd) {
-                write(clients[i], buf, strlen(buf)); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
+                write(clients[i], buf, bytes_read); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
             }
         }
         pthread_mutex_unlock(&mutex);
@@ -130,10 +130,10 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < MAX_CLIENTS; ++i) {
             if (clients[i] == -1) {
                 clients[i] = cSockfd;
-                ++client_count;
                 break;
             }
         }
+        ++client_count;
         pthread_mutex_unlock(&mutex);
 
         // 최대 연결 수를 초과하는 경우 연결 종료
