@@ -25,7 +25,7 @@ void *receive_message(void *arg) {
         if (strcmp(buf, "exit\n") == 0) {
             printf("Exiting...\n");
             close(sockfd);
-            exit(0);
+            pthread_exit(NULL); // 스레드 종료
         }
     }
 }

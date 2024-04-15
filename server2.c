@@ -9,7 +9,7 @@
 #define BUFSIZE 1024
 #define MAX_CLIENTS 10
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // 스레드 동기화를 위한 뮤텍스
 int clients[MAX_CLIENTS]; // 클라이언트 소켓을 저장하는 배열
 int client_count = 0;      // 현재 연결된 클라이언트 수
 
@@ -32,25 +32,22 @@ void *handle_client(void *arg) {
         // 클라이언트로부터 메시지 수신
         memset(buf, 0, sizeof(buf));
         ssize_t bytes_received = read(cSockfd, buf, sizeof(buf));
-        if (bytes_received == -1) {
-            perror("read"); // read: Connection reset by peer
-            close(cSockfd); // 소켓 닫기
-            pthread_exit(NULL); // 스레드 종료
-        } else if (bytes_received == 0) {
-            // 클라이언트가 연결을 끊은 경우
-            printf("Client disconnected.\n");
-            close(cSockfd); // 소켓 닫기
-            
-            // 클라이언트 배열에서 제거
+        if (bytes_read <= 0) {
+            if (bytes_read == 0) {
+                printf("Client disconnected.\n");
+            } else {
+                perror("read");
+            }
             pthread_mutex_lock(&mutex);
-            for (int i = 0; i < MAX_CLIENTS; ++i) {
+            for (int i = 0; i < MAX_CLIENTS; i++) {
                 if (clients[i] == cSockfd) {
                     clients[i] = -1;
-                    client_count--;
                     break;
                 }
             }
+            client_count--;
             pthread_mutex_unlock(&mutex);
+            close(cSockfd);
             pthread_exit(NULL);
         }
 
@@ -86,10 +83,6 @@ int main(int argc, char *argv[]) {
     // typedef int socklen_t;
 	//소켓 API함수에서 주소 구조체의 크기를 전달하는데 사용되는 데이터 타입
     socklen_t len;
-
-    //  POSIX스레드를 나타내는 데이터 형식, 각 스레드의 고유한 식별자
-	// fork()함수의 pid와 비슷한 듯
-    pthread_t tid[MAX_CLIENTS];
 
     // 소켓 생성
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -128,6 +121,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    printf("Server started. Waiting for connections...\n");
+
     // 클라이언트와의 연결을 처리할 스레드 생성
     while (1) {
         // 클라이언트 연결 대기 및 처리
@@ -163,7 +158,10 @@ int main(int argc, char *argv[]) {
 		   arg: start_routine 함수에 전달될 인자입니다.
 		*/
         // 새로운 스레드를 생성하여 클라이언트와 통신
-        if(pthread_create(&tid[client_count - 1], NULL, handle_client, &cSockfd)!= 0){
+        //  POSIX스레드를 나타내는 데이터 형식, 각 스레드의 고유한 식별자
+	    // fork()함수의 pid와 비슷한 듯
+        pthread_t tid;
+        if(pthread_create(&tid, NULL, handle_client, &cSockfd)!= 0){
             perror("pthread_create");
 			return 1;
         }
