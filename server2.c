@@ -47,9 +47,10 @@ void *handle_client(void *arg) {
         fflush(stdout);
 
         // 모든 클라이언트에게 메시지 전송
+        pthread_mutex_lock(&mutex);
         for (int i = 0; i < MAX_CLIENTS; ++i) {
-            if (clients[i] == cSockfd) {
-                write(clients[i], buf, strlen(buf));
+            if (clients[i] != -1 && clients[i] != cSockfd) {
+                write(clients[i], buf, strlen(buf)); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
             }
         }
         pthread_mutex_unlock(&mutex);
