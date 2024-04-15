@@ -16,11 +16,16 @@ void *receive_message(void *arg) {
     while (1) {
         // 서버가 보낸 응답 받기
         memset(buf, 0, sizeof(buf));
-        if (read(sockfd, buf, sizeof(buf)) == -1) {
+        ssize_t bytes_read = read(sockfd, buf, sizeof(buf));
+        if (bytes_read == -1) {
             perror("read");
             pthread_exit(NULL);
+        } else if (bytes_read == 0) {
+            printf("Server disconnected.\n");
+            close(sockfd);
+            pthread_exit(NULL);
         }
-        printf("Server Response: %s", buf);
+        printf("Server Response: %s\n", buf);
         // 만약 서버로부터 받은 메시지가 "exit"인 경우 프로그램 종료
         if (strcmp(buf, "exit\n") == 0) {
             printf("Exiting...\n");
@@ -69,7 +74,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 메시지 주고받기
+    // 메시지 주기
     char buf[BUFSIZE];
     while (1) {
         printf("Input Message : ");
