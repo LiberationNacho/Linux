@@ -56,7 +56,8 @@ void *handle_client(void *arg) {
         // 모든 클라이언트에게 메시지 전송
         for (int i = 0; i < MAX_CLIENTS; ++i) {
             if (clients[i] != -1 && clients[i] != cSockfd) {
-                write(clients[i], buf, bytes_read); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
+                // 계속 서버 화면에서 출력됨
+                // write(clients[i], buf, bytes_read); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
             }
         }
         pthread_mutex_unlock(&mutex);
