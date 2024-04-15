@@ -9,6 +9,8 @@
 #define BUFSIZE 1024
 #define MAX_CLIENTS 10
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 //클라이언트와 통신하는 함수
 /*
 `void *`은 C 언어에서 일반적으로 사용되는 포인터 형식입니다.
@@ -23,6 +25,9 @@
 void *handle_client(void * arg){
 	int cSockfd = *((int*)arg);
 	char buf[BUFSIZE];
+
+	// 스레드 출력 동기화
+	pthread_mutex_lock(&mutex);
 
 	//클라이언트와 메시지 주고받기
 	while(1){
@@ -45,6 +50,9 @@ void *handle_client(void * arg){
 		fgets(buf, sizeof(buf), stdin);
 		write(cSockfd, buf, strlen(buf));
 	}
+
+	//스레드 출력 동기화 헤제
+	pthread_mutex_unlock(&mutex);
 
 	close(cSockfd);
 	pthread_exit(NULL);

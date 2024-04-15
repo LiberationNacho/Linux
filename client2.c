@@ -8,10 +8,8 @@
 
 #define BUFSIZE 1024
 
-// 출력을 동기화하기 위한 mutex 선언
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// 서버 응답을 처리하는 스레드 함수
 void *receive_response(void *arg) {
     int sockfd = *((int *)arg);
     char buf[BUFSIZE];
@@ -27,6 +25,7 @@ void *receive_response(void *arg) {
         // 출력 동기화
         pthread_mutex_lock(&mutex);
         printf("Server Response: %s", buf);
+        fflush(stdout); // 출력 버퍼를 비우고 화면을 갱신
         pthread_mutex_unlock(&mutex);
     }
 
@@ -82,9 +81,13 @@ int main(int argc, char *argv[]) {
 
         // 클라이언트가 서버로 메시지 전송
         write(sockfd, buf, strlen(buf));
+
+        // 출력 화면을 계속 갱신
+        fflush(stdout);
     }
 
     // 연결 종료
     close(sockfd);
     return 0;
 }
+
