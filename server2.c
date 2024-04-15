@@ -43,7 +43,7 @@ void *handle_client(void *arg) {
             }
             --client_count;
             pthread_mutex_unlock(&mutex);
-            printf("Client disconnected. Current client count: %d\n", client_count--);
+            printf("Client disconnected. Current client count: %d\n", client_count);
             // 읽기가 실패하면 클라이언트 연결 종료
             close(cSockfd);
             pthread_exit(NULL);
