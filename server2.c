@@ -32,8 +32,8 @@ void *handle_client(void *arg) {
         // 클라이언트로부터 메시지 수신
         memset(buf, 0, sizeof(buf));
         ssize_t bytes_received = read(cSockfd, buf, sizeof(buf));
-        if (bytes_read <= 0) {
-            if (bytes_read == 0) {
+        if (bytes_received <= 0) {
+            if (bytes_received == 0) {
                 printf("Client disconnected.\n");
             } else {
                 perror("read");
