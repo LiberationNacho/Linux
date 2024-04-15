@@ -9,14 +9,9 @@
 #define MAX_CLIENTS 10
 #define BUFSIZE 1024
 
-// 클라이언트 정보를 저장하는 구조체
-typedef struct {
-    int sockfd; // 클라이언트 소켓 디스크립터
-    struct sockaddr_in addr; // 클라이언트 주소 정보
-} ClientInfo;
-
+int sockfd;
+int client_count = 0;
 ClientInfo clients[MAX_CLIENTS]; // 최대 클라이언트 수만큼의 배열
-
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // 스레드 동기화를 위한 뮤텍스
 
 /*
@@ -39,24 +34,18 @@ void *handle_client(void *arg) {
         memset(buf, 0, sizeof(buf));
         int bytes_read = read(cSockfd, buf, sizeof(buf));
         if (bytes_read <= 0) {
+            printf("Client disconnected. Current client count: %d\n", --client_count);
             // 읽기가 실패하면 클라이언트 연결 종료
             close(cSockfd);
             pthread_exit(NULL);
         }
 
-        // 메시지를 받은 클라이언트의 주소 정보를 찾음
-        struct sockaddr_in sender_addr;
-        socklen_t sender_len = sizeof(sender_addr);
-        getpeername(cSockfd, (struct sockaddr *)&sender_addr, &sender_len);
-
-        // 받은 메시지를 다른 클라이언트에게 전송하고 화면에 출력
-        pthread_mutex_lock(&mutex);
+        // 모든 클라이언트에게 메시지 전송
         for (int i = 0; i < MAX_CLIENTS; ++i) {
-            if (clients[i].sockfd != -1 && clients[i].sockfd != cSockfd) {
-                write(clients[i].sockfd, buf, strlen(buf));
+            if (clients[i] != -1 && clients[i] != cSockfd) {
+                write(clients[i], buf, strlen(buf));
             }
         }
-        printf("Received from %s:%d: %s", inet_ntoa(sender_addr.sin_addr), ntohs(sender_addr.sin_port), buf);
         pthread_mutex_unlock(&mutex);
     }
     return NULL;
@@ -104,7 +93,7 @@ int main(int argc, char *argv[]) {
 	   backlog: 연결 요청 대기 큐의 최대 길이를 지정합니다. 이는 동시에 처리 가능한 최대 연결 요청 수를 결정합니다.
 	*/
     // 연결 요청 대기
-    if (listen(sockfd, 5) == -1) {
+    if (listen(sockfd, 10) == -1) {
         perror("listen");
         close(sockfd);
         return 1;
@@ -112,6 +101,7 @@ int main(int argc, char *argv[]) {
 
     // 클라이언트와의 연결을 처리할 스레드 생성
     while (1) {
+        // 클라이언트 연결 대기 및 처리
         struct sockaddr_in cliaddr;
 
         // typedef int socklen_t;
@@ -126,9 +116,9 @@ int main(int argc, char *argv[]) {
         // 클라이언트 배열에 추가
         pthread_mutex_lock(&mutex);
         for (int i = 0; i < MAX_CLIENTS; ++i) {
-            if (clients[i].sockfd == -1) {
-                clients[i].sockfd = cSockfd;
-                clients[i].addr = cliaddr;
+            if (clients[i] == -1) {
+                clients[i] = cSockfd;
+                client_count++;
                 break;
             }
         }
