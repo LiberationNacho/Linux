@@ -34,18 +34,26 @@ void *handle_client(void *arg) {
         memset(buf, 0, sizeof(buf));
         int bytes_read = read(cSockfd, buf, sizeof(buf));
         if (bytes_read <= 0) {
-            printf("Client disconnected. Current client count: %d\n", --client_count);
+            pthread_mutex_lock(&mutex);
+            for (int i = 0; i < MAX_CLIENTS; ++i) {
+                if (clients[i] == cSockfd) {
+                    clients[i] = -1; // 연결이 끊어진 클라이언트를 배열에서 제거
+                    break;
+                }
+            }
+            --client_count;
+            pthread_mutex_unlock(&mutex);
+            printf("Client disconnected. Current client count: %d\n", client_count--);
             // 읽기가 실패하면 클라이언트 연결 종료
             close(cSockfd);
             pthread_exit(NULL);
         }
+
         pthread_mutex_lock(&mutex);
-        
         printf("Received from client: %s", buf);
         fflush(stdout);
 
         // 모든 클라이언트에게 메시지 전송
-        pthread_mutex_lock(&mutex);
         for (int i = 0; i < MAX_CLIENTS; ++i) {
             if (clients[i] != -1 && clients[i] != cSockfd) {
                 write(clients[i], buf, strlen(buf)); // 클라이언트가 아닌 다른 모든 클라이언트에게 메시지 전송
@@ -66,7 +74,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in servaddr;
 
     // 소켓 생성
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         perror("socket");
         return 1;
@@ -78,26 +86,26 @@ int main(int argc, char *argv[]) {
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(port);
 
-	/*
+    // 소켓에 주소 연결
+    /*
     bind(): 소켓에 주소를 할당하는 역할
     소켓을 로컬 주소와 포트에 바인딩하여 해당 주소와 포트로 들어오는 연결을 수락하거나 데이터를 받을 수 있도록 준비한다.
     sockfd: 바인딩할 소켓의 파일 디스크립터입니다. socket() 함수로 생성한 소켓의 파일 디스크립터를 전달합니다.
     addr: 바인딩할 주소 정보를 담고 있는 struct sockaddr 구조체의 포인터입니다. 보통 struct sockaddr_in 구조체를 사용합니다.
     addrlen: addr 구조체의 크기를 나타내는 값입니다.
 	*/
-    // 소켓에 주소 연결
     if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1) {
         perror("bind");
         close(sockfd);
         return 1;
     }
 
+    // 연결 요청 대기
     /*
     listen(): 소켓이 들어오는 연결을 수신할 수 있도록 설정하는 역할
     sockfd: 연결을 대기할 소켓의 파일 디스크립터입니다. socket() 함수로 생성한 소켓의 파일 디스크립터를 전달합니다.
     backlog: 연결 요청 대기 큐의 최대 길이를 지정합니다. 이는 동시에 처리 가능한 최대 연결 요청 수를 결정합니다.
 	*/
-    // 연결 요청 대기
     if (listen(sockfd, 10) == -1) {
         perror("listen");
         close(sockfd);
@@ -109,7 +117,7 @@ int main(int argc, char *argv[]) {
         // 클라이언트 연결 대기 및 처리
         struct sockaddr_in cliaddr;
 
-        // typedef int socklen_t;
+	    // typedef int socklen_t;
         //소켓 API함수에서 주소 구조체의 크기를 전달하는데 사용되는 데이터 타입
         socklen_t len = sizeof(cliaddr);
         int cSockfd = accept(sockfd, (struct sockaddr *)&cliaddr, &len);
@@ -118,12 +126,11 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        // 클라이언트 배열에 추가
         pthread_mutex_lock(&mutex);
         for (int i = 0; i < MAX_CLIENTS; ++i) {
             if (clients[i] == -1) {
                 clients[i] = cSockfd;
-                client_count++;
+                ++client_count;
                 break;
             }
         }
@@ -151,7 +158,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-	    // 현재 연결된 클라이언트 수 출력
+        // 현재 연결된 클라이언트 수 출력
         printf("Client connected. Current client count: %d\n", client_count);
     }
 
