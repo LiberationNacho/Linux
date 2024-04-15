@@ -8,12 +8,11 @@
 
 #define BUFSIZE 1024
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+int sockfd;
 
-void *receive_response(void *arg) {
-    int sockfd = *((int *)arg);
+// 서버로부터 메시지를 받는 함수
+void *receive_message(void *arg) {
     char buf[BUFSIZE];
-
     while (1) {
         // 서버가 보낸 응답 받기
         memset(buf, 0, sizeof(buf));
@@ -21,15 +20,14 @@ void *receive_response(void *arg) {
             perror("read");
             pthread_exit(NULL);
         }
-
-        // 출력 동기화
-        pthread_mutex_lock(&mutex);
         printf("Server Response: %s", buf);
-        fflush(stdout); // 출력 버퍼를 비우고 화면을 갱신
-        pthread_mutex_unlock(&mutex);
+        // 만약 서버로부터 받은 메시지가 "exit"인 경우 프로그램 종료
+        if (strcmp(buf, "exit\n") == 0) {
+            printf("Exiting...\n");
+            close(sockfd);
+            exit(0);
+        }
     }
-
-    return NULL;
 }
 
 int main(int argc, char *argv[]) {
@@ -40,8 +38,6 @@ int main(int argc, char *argv[]) {
 
     char *server_ip = argv[1];
     int port = atoi(argv[2]);
-
-    int sockfd;
     struct sockaddr_in servaddr;
 
     // 소켓 생성
@@ -66,9 +62,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // 응답을 받는 스레드 생성
+    // 서버로부터 메시지를 받는 스레드 생성
     pthread_t tid;
-    if (pthread_create(&tid, NULL, receive_response, &sockfd) != 0) {
+    if (pthread_create(&tid, NULL, receive_message, NULL) != 0) {
         perror("pthread_create");
         return 1;
     }
@@ -79,15 +75,18 @@ int main(int argc, char *argv[]) {
         printf("Input Message : ");
         fgets(buf, sizeof(buf), stdin);
 
+        // 클라이언트가 "exit"를 입력한 경우 프로그램 종료
+        if (strcmp(buf, "exit\n") == 0) {
+            printf("Exiting...\n");
+            close(sockfd);
+            exit(0);
+        }
+
         // 클라이언트가 서버로 메시지 전송
         write(sockfd, buf, strlen(buf));
-
-        // 출력 화면을 계속 갱신
-        fflush(stdout);
     }
 
     // 연결 종료
     close(sockfd);
     return 0;
 }
-
