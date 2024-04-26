@@ -33,7 +33,8 @@ void *handle_client(void *arg) {
     while (1) {
         memset(buf, 0, sizeof(buf));
         int bytes_read = read(cSockfd, buf, sizeof(buf));
-        if (bytes_read <= 0) {
+        // 읽은 데이터가 0이하면 -> 파일 읽기 실패 또는 연결이 끊어진 경우 
+		if (bytes_read <= 0) {
             pthread_mutex_lock(&mutex);
             for (int i = 0; i < MAX_CLIENTS; ++i) {
                 if (clients[i] == cSockfd) {
