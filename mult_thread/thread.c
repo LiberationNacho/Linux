@@ -4,8 +4,11 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define NUM_THREADS 8
+// 노트북의 물리리적인 스레드가 12개이므로 10개의 스래드를 생성
+// 12개의 스레드는 무서워서 안함
+#define NUM_THREADS 10
 #define ARRAY_SIZE 10000000
+#define ITERATIONS_PER_THREAD 100
 
 int array[ARRAY_SIZE];
 
@@ -13,21 +16,24 @@ int array[ARRAY_SIZE];
 void *single_thread_function(void *arg) {
     int sum = 0;
     for (int i = 0; i < ARRAY_SIZE; i++) {
-        sum += array[i];
+        for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
+            sum += array[i];
+        }
     }
     return NULL;
 }
 
 // 멀티 스레드로 실행되는 함수
-void *multi_thread_function(void *arg) {
+void *mult_thread_function(void *arg) {
     int thread_id = *((int*)arg);
     int chunk_size = ARRAY_SIZE / NUM_THREADS;
     int start = thread_id * chunk_size;
     int end = (thread_id == NUM_THREADS - 1) ? ARRAY_SIZE : start + chunk_size;
     
-    int sum = 0;
     for (int i = start; i < end; i++) {
-        sum += array[i];
+        for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
+            array[i] += 1;
+        }
     }
     
     return NULL;
@@ -59,7 +65,7 @@ struct timeval do_multi_thread() {
     int thread_ids[NUM_THREADS];
     for (int i = 0; i < NUM_THREADS; i++) {
         thread_ids[i] = i;
-        pthread_create(&threads[i], NULL, multi_thread_function, &thread_ids[i]);
+        pthread_create(&threads[i], NULL, mult_thread_function, &thread_ids[i]);
     }
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(threads[i], NULL);
@@ -81,7 +87,10 @@ void print_diff(struct timeval single_time, struct timeval multi_time) {
 }
 
 int main(int argc, char* argv[]) {
-    struct timeval single_thread_processing_time = do_single_thread();
+	// 배열 초기화
+    for (int i = 0; i < ARRAY_SIZE; i++) array[i] = rand() % 100;
+
+	struct timeval single_thread_processing_time = do_single_thread();
     struct timeval multi_thread_processing_time = do_multi_thread();
 
     print_diff(single_thread_processing_time, multi_thread_processing_time);
