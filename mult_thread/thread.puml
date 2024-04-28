@@ -1,0 +1,31 @@
+@startuml
+
+participant Main
+participant single_thread_function
+participant mult_thread_function
+participant do_single_thread
+participant do_multi_thread
+participant print_diff
+
+Main -> do_single_thread: do_single_thread()
+activate do_single_thread
+do_single_thread -> single_thread_function: single_thread_function(NULL)
+activate single_thread_function
+single_thread_function --> do_single_thread
+deactivate single_thread_function
+do_single_thread --> Main
+Main -> do_multi_thread: do_multi_thread()
+activate do_multi_thread
+do_multi_thread -> mult_thread_function: pthread_create() x10
+activate mult_thread_function
+mult_thread_function --> do_multi_thread
+do_multi_thread -> do_multi_thread: pthread_join() x10
+do_multi_thread --> print_diff
+deactivate mult_thread_function
+do_multi_thread --> Main
+Main -> print_diff: print_diff()
+activate print_diff
+print_diff --> Main
+deactivate print_diff
+
+@enduml
