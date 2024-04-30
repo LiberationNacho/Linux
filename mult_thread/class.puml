@@ -1,0 +1,42 @@
+@startuml
+
+class single_thread_function {
+  - array: int[]
+  + execute(): void
+}
+
+class mult_thread_function {
+  - array: int[]
+  - thread_id: int
+  + execute(): void
+}
+
+class do_single_thread {
+  + execute(): void
+}
+
+class do_multi_thread {
+  + execute(): void
+}
+
+class print_diff {
+  + execute(): void
+}
+
+class main {
+  - argc: int
+  - argv: char*[]
+  + execute(): void
+}
+
+single_thread_function --> array
+mult_thread_function --> array
+mult_thread_function --> thread_id
+
+single_thread_function ..> do_single_thread : <<creates>>
+mult_thread_function ..> do_multi_thread : <<creates>>
+
+main --> argc
+main --> argv
+
+@endu
