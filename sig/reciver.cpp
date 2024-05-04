@@ -20,7 +20,7 @@ void signalHandler_term(int signum) {
 }
 
 // SIGUSR
-void signalHandler_term(int signum) {
+void signalHandler_usr(int signum) {
     cout << "Received signal: " << signum << endl;
 	cout << "usr" << endl;
     exit();
