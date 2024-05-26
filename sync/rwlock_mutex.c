@@ -18,7 +18,10 @@ typedef struct {
     int writers;
 } RWLock;
 
+RWLock rwlock;
 int shared_array[ARRAY_SIZE];
+long read_times[NUM_READERS];
+long write_times[NUM_WRITERS];
 
 // RWLock 초기화 함수
 void rwlock_init(RWLock *rwlock) {

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <limits.h>
+#include <math.h>
 
 // 공유 자원
 #define ARRAY_SIZE 100
