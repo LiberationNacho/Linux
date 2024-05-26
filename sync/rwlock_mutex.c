@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define ARRAY_SIZE 10000
-#define NUM_READERS 5
+#define NUM_READERS 50
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -148,28 +148,28 @@ void* reader(void* arg) {
     printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
-    switch (index) {
-        case 1:
+    switch (index/10) {
+        case 0:
             // 합계 계산
             int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
             printf("sum(합계): %d\n", sum);
             break;
-        case 2:
+        case 1:
             // 최대값 계산
             int max = find_max(shared_array, 0, ARRAY_SIZE);
             printf("max(최대값): %d\n", max);
             break;
-        case 3:
+        case 2:
             // 평균 계산
             double average = calculate_average(shared_array, 0, ARRAY_SIZE);
             printf("average(평균): %.2f\n", average);
             break;
-        case 4:
+        case 3:
             // 분산 계산
             double variance = calculate_variance(shared_array, 0, ARRAY_SIZE);
             printf("variance(분산): %.2f\n", variance);
             break;
-        case 5:
+        case 4:
             // 표준편차 계산
             double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE));
             printf("standard deviation(표준편차): %.2f\n", stddev);
