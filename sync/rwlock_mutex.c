@@ -199,7 +199,7 @@ void* writer(void* arg) {
     // 공유 배열을 임의의 값으로 초기화
     for (int i = 0; i < ARRAY_SIZE; i++)
     {
-        shared_array[i] = rand() % 10000;
+        shared_array[i] = rand() % 100;
     }
 
     rwlock_release_write_lock(&rwlock); // 쓰기 잠금 해제

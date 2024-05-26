@@ -153,7 +153,7 @@ void* writer(void* arg) {
 
     for (int i = 0; i < ARRAY_SIZE; i++)
     {
-        shared_array[i] = rand() % 10000;
+        shared_array[i] = rand() % 100;
     }
 
     rwlock_release_write_lock(&rwlock);
@@ -173,19 +173,26 @@ int main() {
     rwlock_init(&rwlock); // RWLock 초기화
     srand(time(NULL));
 
-    gettimeofday(&start, NULL); // 시작 시간 측정
+    // 시작 시간 측정
+    gettimeofday(&start, NULL);
 
-    for (int i = 0; i < NUM_READERS; i++) {
-        pthread_create(&readers[i], NULL, reader, (void*)&i); // 읽기 스레드 생성
+    // 쓰기 스레드 생성
+    pthread_create(&writer_thread, NULL, writer, NULL);
+
+    // 5개의 읽기 스레드 생성
+    for (int i = 0; i < NUM_READERS; i++)
+    {
+        pthread_create(&readers[i], NULL, reader, (void*)&i); // 스레드 생성 및 매개변수 전달
     }
 
-    pthread_create(&writer_thread, NULL, writer, NULL); // 쓰기 스레드 생성
+    // 쓰기 스레드 종료 대기
+    pthread_join(writer_thread, NULL);
 
-    for (int i = 0; i < NUM_READERS; i++) {
-        pthread_join(readers[i], NULL); // 읽기 스레드 종료 대기
+    // 읽기 스레드 종료 대기
+    for (int i = 0; i < NUM_READERS; i++)
+    {
+        pthread_join(readers[i], NULL);
     }
-
-    pthread_join(writer_thread, NULL); // 쓰기 스레드 종료 대기
 
     gettimeofday(&end, NULL); // 종료 시간 측정
 
@@ -194,7 +201,8 @@ int main() {
     printf("실행 시간: %ld 초 %ld 마이크로초\n", seconds, micros); // 실행 시간 출력
 
     long total_read_time = 0;
-    for (int i = 0; i < NUM_READERS; i++) {
+    for (int i = 0; i < NUM_READERS; i++)
+    {
         total_read_time += read_times[i]; // 개별 스레드 시간 계산
     }
     printf("Total read time: %ld 마이크로초\n", total_read_time); // 총 읽기 시간 출력
