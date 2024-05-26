@@ -6,8 +6,8 @@
 #include <math.h>
 
 #define ARRAY_SIZE 100
-#define NUM_READERS 20
-#define NUM_WRITERS 5
+#define NUM_READERS 5
+#define NUM_WRITERS 1
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -77,38 +77,98 @@ void rwlock_release_write_lock(RWLock *rwlock) {
     pthread_mutex_unlock(&rwlock->mutex);
 }
 
-// 읽기 스레드 함수
+// 합계를 계산하는 함수
+int calculate_sum(int* array, int start_index, int end_index) {
+    int sum = 0;
+    for (int i = start_index; i < end_index; i++) {
+        sum += array[i];
+    }
+    return sum;
+}
+
+// 최대값을 찾는 함수
+int find_max(int* array, int start_index, int end_index) {
+    int max = INT_MIN;
+    for (int i = start_index; i < end_index; i++) {
+        if (array[i] > max) {
+            max = array[i];
+        }
+    }
+    return max;
+}
+
+// 평균을 계산하는 함수
+double calculate_average(int* array, int start_index, int end_index) {
+    int sum = calculate_sum(array, start_index, end_index);
+    return (double)sum / (end_index - start_index);
+}
+
+// 분산을 계산하는 함수
+double calculate_variance(int* array, int start_index, int end_index) {
+    double average = calculate_average(array, start_index, end_index);
+    double variance = 0.0;
+    for (int i = start_index; i < end_index; i++) {
+        variance += (array[i] - average) * (array[i] - average);
+    }
+    return variance / (end_index - start_index);
+}
+
+// 표준편차를 계산하는 함수
+double calculate_stddev(double variance) {
+    return sqrt(variance);
+}
+
+// 읽기 스레드 함수(읽기 작업에서는 공유 배열 (shared_array)의 데이터를 읽고 여러 계산을 수행)
 void* reader(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    rwlock_acquire_read_lock(&rwlock);
-    printf("Reader %ld acquired the read lock\n", (long)arg);
+    int index = *(int*)arg; // 스레드 인덱스
+    int chunk_size = ARRAY_SIZE / NUM_READERS; // 배열을 분할할 크기
+    int start_index = index * chunk_size; // 분할된 배열의 시작 인덱스
+    int end_index = start_index + chunk_size; // 분할된 배열의 끝 인덱스
 
-    // 공유 자원을 읽는 작업 수행 (복잡한 작업)
-    int sum = 0, max = INT_MIN;
-    double average = 0.0, variance = 0.0, stddev = 0.0;
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        sum += shared_array[i];
-        if (shared_array[i] > max) {
-            max = shared_array[i];
-        }
-    }
-    average = (double)sum / ARRAY_SIZE;
-    
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        variance += (shared_array[i] - average) * (shared_array[i] - average);
-    }
-    variance /= ARRAY_SIZE;
-    stddev = sqrt(variance);
+    rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
+    printf("Reader %d acquired the read lock\n", index);
 
-    rwlock_release_read_lock(&rwlock);
-    printf("Reader %ld released the read lock (sum: %d, max: %d, avg: %.2f, stddev: %.2f)\n", (long)arg, sum, max, average, stddev);
+    // 각 스레드의 역할에 따라 처리
+    switch (index) {
+        case 0:
+            // 합계 계산
+            int sum = calculate_sum(shared_array, start_index, end_index);
+            printf("Reader %d calculated sum: %d\n", index, sum);
+            break;
+        case 1:
+            // 최대값 계산
+            int max = find_max(shared_array, start_index, end_index);
+            printf("Reader %d found max: %d\n", index, max);
+            break;
+        case 2:
+            // 평균 계산
+            double average = calculate_average(shared_array, start_index, end_index);
+            printf("Reader %d calculated average: %.2f\n", index, average);
+            break;
+        case 3:
+            // 분산 계산
+            double variance = calculate_variance(shared_array, start_index, end_index);
+            printf("Reader %d calculated variance: %.2f\n", index, variance);
+            break;
+        case 4:
+            // 표준편차 계산
+            double stddev = calculate_stddev(variance);
+            printf("Reader %d calculated standard deviation: %.2f\n", index, stddev);
+            break;
+        default:
+            break;
+    }
+
+    rwlock_release_read_lock(&rwlock); // 읽기 잠금 해제
+    printf("Reader %d released the read lock\n", index);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
     long micros = ((seconds * 1000000) + end.tv_usec) - start.tv_usec;
-    read_times[(long)arg] = micros;
+    read_times[index] = micros; // 읽기 시간 기록
     return NULL;
 }
 
@@ -117,32 +177,27 @@ void* writer(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    rwlock_acquire_write_lock(&rwlock);
-    printf("Writer %ld acquired the write lock\n", (long)arg);
+    rwlock_acquire_write_lock(&rwlock); // 쓰기 잠금 획득
+    printf("Writer acquired the write lock\n");
 
-    // 공유 자원을 쓰는 작업 수행 (복잡한 작업)
+    // 공유 배열을 임의의 값으로 초기화
     for (int i = 0; i < ARRAY_SIZE; i++) {
-        shared_array[i] = rand() % 100;
+        shared_array[i] = rand() % 10000;
     }
 
-    // 수정 후 검증 작업
-    int check_sum = 0;
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        check_sum += shared_array[i];
-    }
-
-    rwlock_release_write_lock(&rwlock);
-    printf("Writer %ld released the write lock (check_sum: %d)\n", (long)arg, check_sum);
+    rwlock_release_write_lock(&rwlock); // 쓰기 잠금 해제
+    printf("Writer released the write lock\n");
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
     long micros = ((seconds * 1000000) + end.tv_usec) - start.tv_usec;
-    write_times[(long)arg] = micros;
+    write_times[0] = micros; // 쓰기 시간 기록
     return NULL;
 }
 
+
 int main() {
-    pthread_t readers[20], writers[5];
+    pthread_t readers[NUM_READERS], writer_thread;
     struct timeval start, end;
 
     rwlock_init(&rwlock); // RWLock 초기화
@@ -151,25 +206,24 @@ int main() {
     // 시작 시간 측정
     gettimeofday(&start, NULL);
 
-    // 20개의 읽기 스레드 생성
-    for (long i = 0; i < 20; i++) {
-        pthread_create(&readers[i], NULL, reader, (void*)i);
+    // 5개의 읽기 스레드 생성
+    for (int i = 0; i < NUM_READERS; i++)
+    {
+        int *thread_args = malloc(sizeof(int));
+        *thread_args = i;
+        pthread_create(&readers[i], NULL, reader, (void*)thread_args); // 스레드 생성 및 매개변수 전달
     }
 
-    // 5개의 쓰기 스레드 생성
-    for (long i = 0; i < 5; i++) {
-        pthread_create(&writers[i], NULL, writer, (void*)i);
-    }
+    // 쓰기 스레드 생성
+    pthread_create(&writer_thread, NULL, writer, NULL);
 
     // 읽기 스레드 종료 대기
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < NUM_READERS; i++) {
         pthread_join(readers[i], NULL);
     }
 
     // 쓰기 스레드 종료 대기
-    for (int i = 0; i < 5; i++) {
-        pthread_join(writers[i], NULL);
-    }
+    pthread_join(writer_thread, NULL);
 
     // 종료 시간 측정
     gettimeofday(&end, NULL);
@@ -180,17 +234,14 @@ int main() {
     printf("Execution time: %ld seconds and %ld microseconds\n", seconds, micros);
 
     // 개별 스레드 시간 계산 및 출력
-    long total_read_time = 0, total_write_time = 0;
-    for (int i = 0; i < 20; i++) {
+    long total_read_time = 0, total_write_time = write_times[0];
+    for (int i = 0; i < NUM_READERS; i++) {
         total_read_time += read_times[i];
-    }
-    for (int i = 0; i < 5; i++) {
-        total_write_time += write_times[i];
     }
     printf("Total read time: %ld microseconds\n", total_read_time);
     printf("Total write time: %ld microseconds\n", total_write_time);
-    printf("Average read time: %ld microseconds\n", total_read_time / 20);
-    printf("Average write time: %ld microseconds\n", total_write_time / 5);
+    printf("Average read time: %ld microseconds\n", total_read_time / NUM_READERS);
+    printf("Average write time: %ld microseconds\n", total_write_time);
 
     return 0;
 }

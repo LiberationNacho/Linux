@@ -61,6 +61,8 @@
   "files.associations": {
     "string.h": "c",
     "iostream": "cpp",
-    "ostream": "cpp"
+    "ostream": "cpp",
+    "cmath": "c",
+    "stdlib.h": "c"
   }
 }
