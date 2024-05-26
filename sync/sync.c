@@ -78,16 +78,16 @@ int main() {
 
     double total_rwlock_time = 0.0;
     double total_mutex_time = 0.0;
-    int iterations = 10000;
+    int iterations = 1000;
 
     for (int i = 0; i < iterations; i++) {
         // RWLock 사용
         clock_gettime(CLOCK_MONOTONIC, &start);
-        for (int j = 0; j < 5; j++) {
-            pthread_create(&threads[j], NULL, read_rankings_rwlock, NULL);
-        }
         for (int j = 5; j < 10; j++) {
             pthread_create(&threads[j], NULL, write_rankings_rwlock, NULL);
+        }
+        for (int j = 0; j < 5; j++) {
+            pthread_create(&threads[j], NULL, read_rankings_rwlock, NULL);
         }
         for (int j = 0; j < 10; j++) {
             pthread_join(threads[j], NULL);
@@ -97,11 +97,11 @@ int main() {
 
         // Mutex 사용
         clock_gettime(CLOCK_MONOTONIC, &start);
-        for (int j = 0; j < 5; j++) {
-            pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
-        }
         for (int j = 5; j < 10; j++) {
             pthread_create(&threads[j], NULL, write_rankings_mutex, NULL);
+        }
+        for (int j = 0; j < 5; j++) {
+            pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
         }
         for (int j = 0; j < 10; j++) {
             pthread_join(threads[j], NULL);
