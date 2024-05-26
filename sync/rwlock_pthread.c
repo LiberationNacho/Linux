@@ -177,9 +177,7 @@ int main() {
 
     for (int i = 0; i < 5; i++)
     {
-        int *thread_args = malloc(sizeof(int));
-        *thread_args = i;
-        pthread_create(&readers[i], NULL, reader, (void*)thread_args);
+        pthread_create(&readers[i], NULL, reader, (void*)&i);
     }
 
     pthread_create(&writer_thread, NULL, writer, NULL);

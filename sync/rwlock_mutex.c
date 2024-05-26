@@ -226,9 +226,7 @@ int main() {
     // 5개의 읽기 스레드 생성
     for (int i = 0; i < NUM_READERS; i++)
     {
-        int *thread_args = malloc(sizeof(int));
-        *thread_args = i;
-        pthread_create(&readers[i], NULL, reader, (void*)thread_args); // 스레드 생성 및 매개변수 전달
+        pthread_create(&readers[i], NULL, reader, (void*)&i); // 스레드 생성 및 매개변수 전달
     }
 
     // 쓰기 스레드 생성
