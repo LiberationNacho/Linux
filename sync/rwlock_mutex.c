@@ -5,8 +5,8 @@
 #include <limits.h>
 #include <math.h>
 
-#define ARRAY_SIZE 1000000
-#define NUM_READERS 50
+#define ARRAY_SIZE 10000
+#define NUM_READERS 5
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -143,38 +143,36 @@ void* reader(void* arg) {
     gettimeofday(&start, NULL);
 
     int index = *((int*)arg); // 스레드 인덱스
-    int start_index = (index % 10) * (ARRAY_SIZE / 10); // 각 스레드가 처리할 구간의 시작 인덱스
-    int end_index = start_index + (ARRAY_SIZE / 10);    // 각 스레드가 처리할 구간의 끝 인덱스
 
     rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
     printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
-    switch (index / 10) {
-        case 0:
-            // 합계 계산
-            int sum = calculate_sum(shared_array, start_index, end_index);
-            printf("Reader %d - sum(합계): %d\n", index, sum);
-            break;
+    switch (index) {
         case 1:
-            // 최대값 계산
-            int max = find_max(shared_array, start_index, end_index);
-            printf("Reader %d - max(최대값): %d\n", index, max);
+            // 합계 계산
+            int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
+            printf("sum(합계): %d\n", sum);
             break;
         case 2:
-            // 평균 계산
-            double average = calculate_average(shared_array, start_index, end_index);
-            printf("Reader %d - average(평균): %.2f\n", index, average);
+            // 최대값 계산
+            int max = find_max(shared_array, 0, ARRAY_SIZE);
+            printf("max(최대값): %d\n", max);
             break;
         case 3:
-            // 분산 계산
-            double variance = calculate_variance(shared_array, start_index, end_index);
-            printf("Reader %d - variance(분산): %.2f\n", index, variance);
+            // 평균 계산
+            double average = calculate_average(shared_array, 0, ARRAY_SIZE);
+            printf("average(평균): %.2f\n", average);
             break;
         case 4:
+            // 분산 계산
+            double variance = calculate_variance(shared_array, 0, ARRAY_SIZE);
+            printf("variance(분산): %.2f\n", variance);
+            break;
+        case 5:
             // 표준편차 계산
-            double stddev = calculate_stddev(calculate_variance(shared_array, start_index, end_index));
-            printf("Reader %d - standard deviation(표준편차): %.2f\n", index, stddev);
+            double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE));
+            printf("standard deviation(표준편차): %.2f\n", stddev);
             break;
         default:
             break;
@@ -213,7 +211,6 @@ void* writer(void* arg) {
     write_time = micros; // 쓰기 시간 기록
     return NULL;
 }
-
 
 int main() {
     pthread_t readers[NUM_READERS], writer_thread;

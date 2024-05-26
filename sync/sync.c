@@ -99,8 +99,7 @@ int main() {
 
     printf("RWLock:\n");
     for (int i = 0; i < iterations; i++) {
-        // 이중 포인터를 사용하지 않고 단일 포인터로 변경
-        double elapsed_times[10]; // 수정된 부분
+        double elapsed_times[10]; // 변경된 부분
 
         for (int j = 0; j < 5; j++) {
             pthread_create(&threads[j], NULL, read_rankings_rwlock, NULL);
@@ -109,8 +108,7 @@ int main() {
             pthread_create(&threads[j], NULL, write_rankings_rwlock, NULL);
         }
         for (int j = 0; j < 10; j++) {
-            // 반환값 받을 변수 주소를 &elapsed_times[j]로 변경
-            pthread_join(threads[j], (void**)&elapsed_times[j]);
+            pthread_join(threads[j], (void**)&elapsed_times[j]); // 변경된 부분
         }
         for (int j = 0; j < 5; j++) {
             total_rwlock_read_time += elapsed_times[j];
@@ -125,7 +123,7 @@ int main() {
 
     printf("\nMutex:\n");
     for (int i = 0; i < iterations; i++) {
-        double elapsed_times[10]; // 수정된 부분
+        double elapsed_times[10]; // 변경된 부분
 
         for (int j = 0; j < 5; j++) {
             pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
@@ -134,7 +132,7 @@ int main() {
             pthread_create(&threads[j], NULL, write_rankings_mutex, NULL);
         }
         for (int j = 0; j < 10; j++) {
-            pthread_join(threads[j], (void**)&elapsed_times[j]);
+            pthread_join(threads[j], (void**)&elapsed_times[j]); // 변경된 부분
         }
         for (int j = 0; j < 5; j++) {
             total_mutex_read_time += elapsed_times[j];
