@@ -28,15 +28,22 @@ double get_time_diff(struct timespec start, struct timespec end) {
     return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 }
 
+void print_rankings() {
+    for (int i = 0; i < NUM_RANKINGS; i++) {
+        printf("%d ", rankings[i]);
+    }
+    printf("\n");
+}
+
 void* read_rankings_rwlock(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_rdlock(&rwlock);
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    print_rankings();
     pthread_rwlock_unlock(&rwlock);
+    clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    printf("RWLock Read Time: %.6f seconds\n", elapsed);
-    return NULL;
+    return (void*)elapsed;
 }
 
 void* write_rankings_rwlock(void* arg) {
@@ -49,19 +56,18 @@ void* write_rankings_rwlock(void* arg) {
     pthread_rwlock_unlock(&rwlock);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    printf("RWLock Write Time: %.6f seconds\n", elapsed);
-    return NULL;
+    return (void*)elapsed;
 }
 
 void* read_rankings_mutex(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
+    print_rankings();
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    printf("Mutex Read Time: %.6f seconds\n", elapsed);
-    return NULL;
+    return (void*)elapsed;
 }
 
 void* write_rankings_mutex(void* arg) {
@@ -74,8 +80,7 @@ void* write_rankings_mutex(void* arg) {
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    printf("Mutex Write Time: %.6f seconds\n", elapsed);
-    return NULL;
+    return (void*)elapsed;
 }
 
 int main() {
@@ -86,44 +91,57 @@ int main() {
     pthread_mutex_init(&mutex, NULL);
 
     pthread_t threads[20];
-
+    double total_rwlock_read_time = 0.0;
+    double total_rwlock_write_time = 0.0;
+    double total_mutex_read_time = 0.0;
+    double total_mutex_write_time = 0.0;
     int iterations = 10000;
 
     printf("RWLock:\n");
     for (int i = 0; i < iterations; i++) {
-        pthread_create(&threads[0], NULL, read_rankings_rwlock, NULL);
-        pthread_create(&threads[1], NULL, read_rankings_rwlock, NULL);
-        pthread_create(&threads[2], NULL, read_rankings_rwlock, NULL);
-        pthread_create(&threads[3], NULL, read_rankings_rwlock, NULL);
-        pthread_create(&threads[4], NULL, read_rankings_rwlock, NULL);
-        pthread_create(&threads[5], NULL, write_rankings_rwlock, NULL);
-        pthread_create(&threads[6], NULL, write_rankings_rwlock, NULL);
-        pthread_create(&threads[7], NULL, write_rankings_rwlock, NULL);
-        pthread_create(&threads[8], NULL, write_rankings_rwlock, NULL);
-        pthread_create(&threads[9], NULL, write_rankings_rwlock, NULL);
-
+        double* elapsed_times[10];
+        for (int j = 0; j < 5; j++) {
+            pthread_create(&threads[j], NULL, read_rankings_rwlock, NULL);
+        }
+        for (int j = 5; j < 10; j++) {
+            pthread_create(&threads[j], NULL, write_rankings_rwlock, NULL);
+        }
         for (int j = 0; j < 10; j++) {
-            pthread_join(threads[j], NULL);
+            pthread_join(threads[j], (void**)&elapsed_times[j]);
+        }
+        for (int j = 0; j < 5; j++) {
+            total_rwlock_read_time += *elapsed_times[j];
+        }
+        for (int j = 5; j < 10; j++) {
+            total_rwlock_write_time += *elapsed_times[j];
         }
     }
 
-    printf("Mutex:\n");
+    printf("Average Read Time: %.6f seconds\n", total_rwlock_read_time / (5 * iterations));
+    printf("Average Write Time: %.6f seconds\n", total_rwlock_write_time / (5 * iterations));
+
+    printf("\nMutex:\n");
     for (int i = 0; i < iterations; i++) {
-        pthread_create(&threads[0], NULL, read_rankings_mutex, NULL);
-        pthread_create(&threads[1], NULL, read_rankings_mutex, NULL);
-        pthread_create(&threads[2], NULL, read_rankings_mutex, NULL);
-        pthread_create(&threads[3], NULL, read_rankings_mutex, NULL);
-        pthread_create(&threads[4], NULL, read_rankings_mutex, NULL);
-        pthread_create(&threads[5], NULL, write_rankings_mutex, NULL);
-        pthread_create(&threads[6], NULL, write_rankings_mutex, NULL);
-        pthread_create(&threads[7], NULL, write_rankings_mutex, NULL);
-        pthread_create(&threads[8], NULL, write_rankings_mutex, NULL);
-        pthread_create(&threads[9], NULL, write_rankings_mutex, NULL);
-
+        double* elapsed_times[10];
+        for (int j = 0; j < 5; j++) {
+            pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
+        }
+        for (int j = 5; j < 10; j++) {
+            pthread_create(&threads[j], NULL, write_rankings_mutex, NULL);
+        }
         for (int j = 0; j < 10; j++) {
-            pthread_join(threads[j], NULL);
+            pthread_join(threads[j], (void**)&elapsed_times[j]);
+        }
+        for (int j = 0; j < 5; j++) {
+            total_mutex_read_time += *elapsed_times[j];
+        }
+        for (int j = 5; j < 10; j++) {
+            total_mutex_write_time += *elapsed_times[j];
         }
     }
+
+    printf("Average Read Time: %.6f seconds\n", total_mutex_read_time / (5 * iterations));
+    printf("Average Write Time: %.6f seconds\n", total_mutex_write_time / (5 * iterations));
 
     pthread_rwlock_destroy(&rwlock);
     pthread_mutex_destroy(&mutex);
