@@ -38,7 +38,6 @@ double get_time_diff(struct timespec start, struct timespec end) {
 
 void* read_rankings_rwlock(void* arg) {
     pthread_rwlock_rdlock(&rwlock);
-    print_rankings();
     pthread_rwlock_unlock(&rwlock);
     return NULL;
 }
@@ -54,7 +53,6 @@ void* write_rankings_rwlock(void* arg) {
 
 void* read_rankings_mutex(void* arg) {
     pthread_mutex_lock(&mutex);
-    print_rankings();
     pthread_mutex_unlock(&mutex);
     return NULL;
 }
@@ -80,7 +78,7 @@ int main() {
 
     double total_rwlock_time = 0.0;
     double total_mutex_time = 0.0;
-    int iterations = 100;
+    int iterations = 10000;
 
     for (int i = 0; i < iterations; i++) {
         // RWLock 사용
@@ -112,8 +110,8 @@ int main() {
         total_mutex_time += get_time_diff(start, end);
     }
 
-    printf("Average RWLock time: %.6f seconds\n", total_rwlock_time / iterations);
-    printf("Average Mutex time: %.6f seconds\n", total_mutex_time / iterations);
+    printf("RWLock time: %.6f seconds\n", total_rwlock_time);
+    printf("Mutex time: %.6f seconds\n", total_mutex_time);
 
     pthread_rwlock_destroy(&rwlock);
     pthread_mutex_destroy(&mutex);
