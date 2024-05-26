@@ -104,9 +104,6 @@ void* reader(void* arg) {
     gettimeofday(&start, NULL);
 
     int index = *(int*)arg; // 스레드 인덱스
-    int chunk_size = ARRAY_SIZE / NUM_READERS; // 배열을 분할할 크기
-    int start_index = index * chunk_size; // 분할된 배열의 시작 인덱스
-    int end_index = start_index + chunk_size; // 분할된 배열의 끝 인덱스
 
     rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
     // printf("Reader %d acquired the read lock\n", index);
@@ -115,23 +112,23 @@ void* reader(void* arg) {
     switch (index) {
         case 0:
             // 합계 계산
-            int sum = calculate_sum(shared_array, start_index, end_index);
+            int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
             break;
         case 1:
             // 최대값 계산
-            int max = find_max(shared_array, start_index, end_index);
+            int max = find_max(shared_array, 0, ARRAY_SIZE);
             break;
         case 2:
             // 평균 계산
-            double average = calculate_average(shared_array, start_index, end_index);
+            double average = calculate_average(shared_array, 0, ARRAY_SIZE);
             break;
         case 3:
             // 분산 계산
-            double variance = calculate_variance(shared_array, start_index, end_index);
+            double variance = calculate_variance(shared_array, 0, ARRAY_SIZE);
             break;
         case 4:
             // 표준편차 계산
-            double stddev = calculate_stddev(variance);
+            double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE););
             break;
         default:
             break;

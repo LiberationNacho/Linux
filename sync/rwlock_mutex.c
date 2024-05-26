@@ -156,23 +156,23 @@ void* reader(void* arg) {
     switch (index) {
         case 0:
             // 합계 계산
-            int sum = calculate_sum(shared_array, start_index, end_index);
+            int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
             break;
         case 1:
             // 최대값 계산
-            int max = find_max(shared_array, start_index, end_index);
+            int max = find_max(shared_array, 0, ARRAY_SIZE);
             break;
         case 2:
             // 평균 계산
-            double average = calculate_average(shared_array, start_index, end_index);
+            double average = calculate_average(shared_array, 0, ARRAY_SIZE);
             break;
         case 3:
             // 분산 계산
-            double variance = calculate_variance(shared_array, start_index, end_index);
+            double variance = calculate_variance(shared_array, 0, ARRAY_SIZE);
             break;
         case 4:
             // 표준편차 계산
-            double stddev = calculate_stddev(variance);
+            double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE););
             break;
         default:
             break;
