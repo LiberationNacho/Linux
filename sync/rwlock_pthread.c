@@ -6,15 +6,17 @@
 #include <limits.h>
 #include <math.h>
 
+#define NUM_READERS 5
 #define ARRAY_SIZE 100
 int shared_array[ARRAY_SIZE];
+
 
 typedef struct {
     pthread_rwlock_t lock;
 } RWLock;
 
 RWLock rwlock;
-long read_times[5];
+long read_times[NUM_READERS];
 long write_time;
 
 void rwlock_init(RWLock *rwlock)
