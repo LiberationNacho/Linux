@@ -103,7 +103,7 @@ void* reader(void* arg) {
     printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
-    switch (index) {
+    switch (index/10) {
         case 0:
             // 합계 계산
             int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
