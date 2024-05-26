@@ -33,60 +33,6 @@ void rwlock_init(RWLock *rwlock)
     rwlock->writers = 0;
 }
 
-// 읽기 잠금 획득 함수
-void rwlock_acquire_read_lock(RWLock *rwlock)
-{
-    pthread_mutex_lock(&rwlock->mutex);
-    while (rwlock->pending_writers > 0 || rwlock->writers > 0)
-    {
-        pthread_cond_wait(&rwlock->readers_proceed, &rwlock->mutex);
-    }
-    rwlock->readers++;
-    pthread_mutex_unlock(&rwlock->mutex);
-}
-
-// 읽기 잠금 해제 함수
-void rwlock_release_read_lock(RWLock *rwlock)
-{
-    pthread_mutex_lock(&rwlock->mutex);
-    rwlock->readers--;
-    if (rwlock->readers == 0 && rwlock->pending_writers > 0)
-    {
-        pthread_cond_signal(&rwlock->writers_proceed);
-    }
-    pthread_mutex_unlock(&rwlock->mutex);
-}
-
-// 쓰기 잠금 획득 함수
-void rwlock_acquire_write_lock(RWLock *rwlock)
-{
-    pthread_mutex_lock(&rwlock->mutex);
-    rwlock->pending_writers++;
-    while (rwlock->readers > 0 || rwlock->writers > 0) 
-    {
-        pthread_cond_wait(&rwlock->writers_proceed, &rwlock->mutex);
-    }
-    rwlock->pending_writers--;
-    rwlock->writers++;
-    pthread_mutex_unlock(&rwlock->mutex);
-}
-
-// 쓰기 잠금 해제 함수
-void rwlock_release_write_lock(RWLock *rwlock)
-{
-    pthread_mutex_lock(&rwlock->mutex);
-    rwlock->writers--;
-    if (rwlock->pending_writers > 0)
-    {
-        pthread_cond_signal(&rwlock->writers_proceed);
-    }
-    else 
-    {
-        pthread_cond_broadcast(&rwlock->readers_proceed);
-    }
-    pthread_mutex_unlock(&rwlock->mutex);
-}
-
 // 합계를 계산하는 함수
 int calculate_sum(int* array, int start_index, int end_index)
 {
@@ -144,7 +90,7 @@ void* reader(void* arg) {
 
     int index = *((int*)arg); // 스레드 인덱스
 
-    rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
+    pthread_mutex_lock(&rwlock.mutex); // 읽기 잠금 획득
     // printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
@@ -178,7 +124,7 @@ void* reader(void* arg) {
             break;
     }
 
-    rwlock_release_read_lock(&rwlock); // 읽기 잠금 해제
+    pthread_mutex_unlock(&rwlock.mutex); // 읽기 잠금 해제
     // printf("Reader %d released the read lock\n", index);
 
     gettimeofday(&end, NULL);
@@ -193,7 +139,7 @@ void* writer(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    rwlock_acquire_write_lock(&rwlock); // 쓰기 잠금 획득
+    pthread_mutex_lock(&rwlock.mutex); // 쓰기 잠금 획득
     // printf("Writer acquired the write lock\n");
 
     // 공유 배열을 임의의 값으로 초기화
@@ -202,7 +148,7 @@ void* writer(void* arg) {
         shared_array[i] = rand() % 100;
     }
 
-    rwlock_release_write_lock(&rwlock); // 쓰기 잠금 해제
+    pthread_mutex_unlock(&rwlock.mutex); // 쓰기 잠금 해제
     // printf("Writer released the write lock\n");
 
     gettimeofday(&end, NULL);
