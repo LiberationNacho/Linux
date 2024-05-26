@@ -148,9 +148,6 @@ void* reader(void* arg) {
     gettimeofday(&start, NULL);
 
     int index = *(int*)arg; // 스레드 인덱스
-    int chunk_size = ARRAY_SIZE / NUM_READERS; // 배열을 분할할 크기
-    int start_index = index * chunk_size; // 분할된 배열의 시작 인덱스
-    int end_index = start_index + chunk_size; // 분할된 배열의 끝 인덱스
 
     rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
     // printf("Reader %d acquired the read lock\n", index);

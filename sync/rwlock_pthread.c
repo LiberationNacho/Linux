@@ -206,7 +206,7 @@ int main() {
         total_read_time += read_times[i];
     }
     printf("Total read time: %ld microseconds\n", total_read_time);
-    printf("write time: %ld microseconds\n", write_time);
+    printf("Total write time: %ld microseconds\n", write_time);
     printf("Average read time: %ld microseconds\n", total_read_time / 5);
 
     return 0;
