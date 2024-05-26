@@ -13,11 +13,6 @@ int rankings[NUM_RANKINGS];
 pthread_rwlock_t rwlock;
 pthread_mutex_t mutex;
 
-double total_rwlock_read_time = 0.0;
-double total_rwlock_write_time = 0.0;
-double total_mutex_read_time = 0.0;
-double total_mutex_write_time = 0.0;
-
 void* read_rankings_rwlock(void* arg);
 void* write_rankings_rwlock(void* arg);
 void* read_rankings_mutex(void* arg);
@@ -51,8 +46,9 @@ void* read_rankings_rwlock(void* arg) {
     print_rankings();
     pthread_rwlock_unlock(&rwlock);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_elapsed_time(start, end);
-    return (void*)elapsed;
+    double* elapsed = malloc(sizeof(double));
+    *elapsed = get_elapsed_time(start, end);
+    return elapsed;
 }
 
 void* write_rankings_rwlock(void* arg) {
@@ -65,8 +61,9 @@ void* write_rankings_rwlock(void* arg) {
     printf("RWLock Write: Updated index %d with value %d\n", index, value);
     pthread_rwlock_unlock(&rwlock);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_elapsed_time(start, end);
-    return (void*)elapsed;
+    double* elapsed = malloc(sizeof(double));
+    *elapsed = get_elapsed_time(start, end);
+    return elapsed;
 }
 
 void* read_rankings_mutex(void* arg) {
@@ -77,8 +74,9 @@ void* read_rankings_mutex(void* arg) {
     print_rankings();
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_elapsed_time(start, end);
-    return (void*)elapsed;
+    double* elapsed = malloc(sizeof(double));
+    *elapsed = get_elapsed_time(start, end);
+    return elapsed;
 }
 
 void* write_rankings_mutex(void* arg) {
@@ -91,8 +89,9 @@ void* write_rankings_mutex(void* arg) {
     printf("Mutex Write: Updated index %d with value %d\n", index, value);
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_elapsed_time(start, end);
-    return (void*)elapsed;
+    double* elapsed = malloc(sizeof(double));
+    *elapsed = get_elapsed_time(start, end);
+    return elapsed;
 }
 
 int main() {
@@ -103,23 +102,26 @@ int main() {
     pthread_mutex_init(&mutex, NULL);
 
     pthread_t threads[NUM_THREADS];
+    double total_rwlock_read_time = 0.0;
+    double total_rwlock_write_time = 0.0;
+    double total_mutex_read_time = 0.0;
+    double total_mutex_write_time = 0.0;
 
     // RWLock 사용
     printf("Using RWLock:\n");
     for (int i = 0; i < NUM_READ_THREADS; i++) {
+        void* elapsed;
         pthread_create(&threads[i], NULL, read_rankings_rwlock, NULL);
+        pthread_join(threads[i], &elapsed);
+        total_rwlock_read_time += *((double*)elapsed);
+        free(elapsed);
     }
     for (int i = NUM_READ_THREADS; i < NUM_THREADS; i++) {
-        pthread_create(&threads[i], NULL, write_rankings_rwlock, NULL);
-    }
-    for (int i = 0; i < NUM_THREADS; i++) {
         void* elapsed;
+        pthread_create(&threads[i], NULL, write_rankings_rwlock, NULL);
         pthread_join(threads[i], &elapsed);
-        if (i < NUM_READ_THREADS) {
-            total_rwlock_read_time += *((double*)elapsed);
-        } else {
-            total_rwlock_write_time += *((double*)elapsed);
-        }
+        total_rwlock_write_time += *((double*)elapsed);
+        free(elapsed);
     }
 
     printf("Average RWLock Read Time: %.6f seconds\n", total_rwlock_read_time / NUM_READ_THREADS);
@@ -128,19 +130,18 @@ int main() {
     // Mutex 사용
     printf("\nUsing Mutex:\n");
     for (int i = 0; i < NUM_READ_THREADS; i++) {
+        void* elapsed;
         pthread_create(&threads[i], NULL, read_rankings_mutex, NULL);
+        pthread_join(threads[i], &elapsed);
+        total_mutex_read_time += *((double*)elapsed);
+        free(elapsed);
     }
     for (int i = NUM_READ_THREADS; i < NUM_THREADS; i++) {
-        pthread_create(&threads[i], NULL, write_rankings_mutex, NULL);
-    }
-    for (int i = 0; i < NUM_THREADS; i++) {
         void* elapsed;
+        pthread_create(&threads[i], NULL, write_rankings_mutex, NULL);
         pthread_join(threads[i], &elapsed);
-        if (i < NUM_READ_THREADS) {
-            total_mutex_read_time += *((double*)elapsed);
-        } else {
-            total_mutex_write_time += *((double*)elapsed);
-        }
+        total_mutex_write_time += *((double*)elapsed);
+        free(elapsed);
     }
 
     printf("Average Mutex Read Time: %.6f seconds\n", total_mutex_read_time / NUM_READ_THREADS);
