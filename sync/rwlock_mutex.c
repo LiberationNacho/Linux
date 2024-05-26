@@ -7,7 +7,6 @@
 
 #define ARRAY_SIZE 100
 #define NUM_READERS 5
-#define NUM_WRITERS 1
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -21,7 +20,7 @@ typedef struct {
 RWLock rwlock;
 int shared_array[ARRAY_SIZE];
 long read_times[NUM_READERS];
-long write_times[NUM_WRITERS];
+long write_time;
 
 // RWLock 초기화 함수
 void rwlock_init(RWLock *rwlock) {
@@ -191,7 +190,7 @@ void* writer(void* arg) {
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
     long micros = ((seconds * 1000000) + end.tv_usec) - start.tv_usec;
-    write_times[0] = micros; // 쓰기 시간 기록
+    write_time = micros; // 쓰기 시간 기록
     return NULL;
 }
 
@@ -234,14 +233,13 @@ int main() {
     printf("Execution time: %ld seconds and %ld microseconds\n", seconds, micros);
 
     // 개별 스레드 시간 계산 및 출력
-    long total_read_time = 0, total_write_time = write_times[0];
+    long total_read_time = 0;
     for (int i = 0; i < NUM_READERS; i++) {
         total_read_time += read_times[i];
     }
     printf("Total read time: %ld microseconds\n", total_read_time);
-    printf("Total write time: %ld microseconds\n", total_write_time);
+    printf("Total write time: %ld microseconds\n", write_time);
     printf("Average read time: %ld microseconds\n", total_read_time / NUM_READERS);
-    printf("Average write time: %ld microseconds\n", total_write_time);
 
     return 0;
 }

@@ -182,7 +182,6 @@ int main() {
     printf("Total read time: %ld microseconds\n", total_read_time);
     printf("Total write time: %ld microseconds\n", write_time);
     printf("Average read time: %ld microseconds\n", total_read_time / 5);
-    printf("Average write time: %ld microseconds\n", total_write_time / 5);
 
     return 0;
 }
