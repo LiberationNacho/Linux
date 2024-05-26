@@ -7,7 +7,7 @@
 #include <math.h>
 
 #define NUM_READERS 5
-#define ARRAY_SIZE 100
+#define ARRAY_SIZE 10000
 int shared_array[ARRAY_SIZE];
 
 
@@ -167,42 +167,38 @@ void* writer(void* arg) {
 }
 
 int main() {
-    pthread_t readers[5], writer_thread;
+    pthread_t readers[NUM_READERS], writer_thread;
     struct timeval start, end;
 
-    rwlock_init(&rwlock);
+    rwlock_init(&rwlock); // RWLock 초기화
     srand(time(NULL));
 
-    gettimeofday(&start, NULL);
+    gettimeofday(&start, NULL); // 시작 시간 측정
 
-    for (int i = 0; i < 5; i++)
-    {
-        pthread_create(&readers[i], NULL, reader, (void*)&i);
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_create(&readers[i], NULL, reader, (void*)&i); // 읽기 스레드 생성
     }
 
-    pthread_create(&writer_thread, NULL, writer, NULL);
+    pthread_create(&writer_thread, NULL, writer, NULL); // 쓰기 스레드 생성
 
-    for (int i = 0; i < 5; i++)
-    {
-        pthread_join(readers[i], NULL);
+    for (int i = 0; i < NUM_READERS; i++) {
+        pthread_join(readers[i], NULL); // 읽기 스레드 종료 대기
     }
 
-    pthread_join(writer_thread, NULL);
+    pthread_join(writer_thread, NULL); // 쓰기 스레드 종료 대기
 
-    gettimeofday(&end, NULL);
+    gettimeofday(&end, NULL); // 종료 시간 측정
 
     long seconds = end.tv_sec - start.tv_sec;
     long micros = ((seconds * 1000000) + end.tv_usec) - start.tv_usec;
-    printf("Execution time: %ld seconds and %ld microseconds\n", seconds, micros);
+    printf("실행 시간: %ld 초 %ld 마이크로초\n", seconds, micros); // 실행 시간 출력
 
     long total_read_time = 0;
-    for (int i = 0; i < 5; i++) 
-    {
-        total_read_time += read_times[i];
+    for (int i = 0; i < NUM_READERS; i++) {
+        total_read_time += read_times[i]; // 개별 스레드 시간 계산
     }
-    printf("Total read time: %ld microseconds\n", total_read_time);
-    printf("Total write time: %ld microseconds\n", write_time);
-    printf("Average read time: %ld microseconds\n", total_read_time / 5);
+    printf("Total read time: %ld 마이크로초\n", total_read_time); // 총 읽기 시간 출력
+    printf("Average read time: %ld 마이크로초\n", total_read_time / NUM_READERS); // 평균 읽기 시간 출력
 
     return 0;
 }

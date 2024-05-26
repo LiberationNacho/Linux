@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <math.h>
 
-#define ARRAY_SIZE 100
+#define ARRAY_SIZE 10000
 #define NUM_READERS 5
 
 typedef struct {
@@ -223,14 +223,17 @@ int main() {
     // 시작 시간 측정
     gettimeofday(&start, NULL);
 
+    // 쓰기 스레드 생성
+    pthread_create(&writer_thread, NULL, writer, NULL);
+
     // 5개의 읽기 스레드 생성
     for (int i = 0; i < NUM_READERS; i++)
     {
         pthread_create(&readers[i], NULL, reader, (void*)&i); // 스레드 생성 및 매개변수 전달
     }
 
-    // 쓰기 스레드 생성
-    pthread_create(&writer_thread, NULL, writer, NULL);
+    // 쓰기 스레드 종료 대기
+    pthread_join(writer_thread, NULL);
 
     // 읽기 스레드 종료 대기
     for (int i = 0; i < NUM_READERS; i++)
@@ -238,16 +241,13 @@ int main() {
         pthread_join(readers[i], NULL);
     }
 
-    // 쓰기 스레드 종료 대기
-    pthread_join(writer_thread, NULL);
-
     // 종료 시간 측정
     gettimeofday(&end, NULL);
 
     // 실행 시간 계산 및 출력
     long seconds = end.tv_sec - start.tv_sec;
     long micros = ((seconds * 1000000) + end.tv_usec) - start.tv_usec;
-    printf("Execution time: %ld seconds and %ld microseconds\n", seconds, micros);
+    printf("실행 시간: %ld 초 %ld 마이크로초\n", seconds, micros);
 
     // 개별 스레드 시간 계산 및 출력
     long total_read_time = 0;
@@ -255,9 +255,8 @@ int main() {
     {
         total_read_time += read_times[i];
     }
-    printf("Total read time: %ld microseconds\n", total_read_time);
-    printf("Total write time: %ld microseconds\n", write_time);
-    printf("Average read time: %ld microseconds\n", total_read_time / NUM_READERS);
+    printf("Total read time: %ld 마이크로초\n", total_read_time);
+    printf("Average read time: %ld 마이크로초\n", total_read_time / NUM_READERS);
 
     return 0;
 }
