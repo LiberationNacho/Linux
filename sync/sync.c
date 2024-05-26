@@ -31,39 +31,63 @@ void print_rankings() {
     printf("\n");
 }
 
+double get_elapsed_time(struct timespec start, struct timespec end) {
+    return (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec) / 1e9;
+}
+
 void* read_rankings_rwlock(void* arg) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_rdlock(&rwlock);
     printf("RWLock Read: ");
     print_rankings();
     pthread_rwlock_unlock(&rwlock);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = get_elapsed_time(start, end);
+    printf("RWLock Read Time: %.6f seconds\n", elapsed);
     return NULL;
 }
 
 void* write_rankings_rwlock(void* arg) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_wrlock(&rwlock);
     int index = rand() % NUM_RANKINGS;
     int value = rand() % 100;
     rankings[index] = value;
     printf("RWLock Write: Updated index %d with value %d\n", index, value);
     pthread_rwlock_unlock(&rwlock);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = get_elapsed_time(start, end);
+    printf("RWLock Write Time: %.6f seconds\n", elapsed);
     return NULL;
 }
 
 void* read_rankings_mutex(void* arg) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
     printf("Mutex Read: ");
     print_rankings();
     pthread_mutex_unlock(&mutex);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = get_elapsed_time(start, end);
+    printf("Mutex Read Time: %.6f seconds\n", elapsed);
     return NULL;
 }
 
 void* write_rankings_mutex(void* arg) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
     int index = rand() % NUM_RANKINGS;
     int value = rand() % 100;
     rankings[index] = value;
     printf("Mutex Write: Updated index %d with value %d\n", index, value);
     pthread_mutex_unlock(&mutex);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = get_elapsed_time(start, end);
+    printf("Mutex Write Time: %.6f seconds\n", elapsed);
     return NULL;
 }
 
