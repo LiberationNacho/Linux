@@ -38,6 +38,7 @@ double get_time_diff(struct timespec start, struct timespec end) {
 
 void* read_rankings_rwlock(void* arg) {
     pthread_rwlock_rdlock(&rwlock);
+    print_rankings();
     pthread_rwlock_unlock(&rwlock);
     return NULL;
 }
@@ -53,6 +54,7 @@ void* write_rankings_rwlock(void* arg) {
 
 void* read_rankings_mutex(void* arg) {
     pthread_mutex_lock(&mutex);
+    print_rankings();
     pthread_mutex_unlock(&mutex);
     return NULL;
 }
