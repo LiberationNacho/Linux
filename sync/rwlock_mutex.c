@@ -95,7 +95,7 @@ int calculate_sum(int* array, int start_index, int end_index)
     {
         sum += array[i];
     }
-    printf("sum: %d\n", sum);
+    // printf("sum: %d\n", sum);
     return sum;
 }
 
@@ -110,7 +110,7 @@ int find_max(int* array, int start_index, int end_index)
             max = array[i];
         }
     }
-    printf("max: %d\n", max);
+    // printf("max: %d\n", max);
     return max;
 }
 
@@ -118,7 +118,7 @@ int find_max(int* array, int start_index, int end_index)
 double calculate_average(int* array, int start_index, int end_index)
 {
     int sum = calculate_sum(array, start_index, end_index);
-    printf("average: %.2f\n", (double)sum / (end_index - start_index));
+    // printf("average: %.2f\n", (double)sum / (end_index - start_index));
     return (double)sum / (end_index - start_index);
 }
 
@@ -131,14 +131,14 @@ double calculate_variance(int* array, int start_index, int end_index)
     {
         variance += (array[i] - average) * (array[i] - average);
     }
-    printf("variance: %.2f\n", variance / (end_index - start_index));
+    // printf("variance: %.2f\n", variance / (end_index - start_index));
     return variance / (end_index - start_index);
 }
 
 // 표준편차를 계산하는 함수
 double calculate_stddev(double variance)
 {
-    printf("deviation: %.2f\n", sqrt(variance));
+    // printf("deviation: %.2f\n", sqrt(variance));
     return sqrt(variance);
 }
 
@@ -147,10 +147,10 @@ void* reader(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    int index = *(int*)arg; // 스레드 인덱스
+    int index = *(int)arg; // 스레드 인덱스
 
     rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
-    // printf("Reader %d acquired the read lock\n", index);
+    printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
     switch (index) {
@@ -179,7 +179,7 @@ void* reader(void* arg) {
     }
 
     rwlock_release_read_lock(&rwlock); // 읽기 잠금 해제
-    // printf("Reader %d released the read lock\n", index);
+    printf("Reader %d released the read lock\n", index);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;

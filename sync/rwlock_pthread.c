@@ -103,10 +103,10 @@ void* reader(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    int index = *(int*)arg; // 스레드 인덱스
+    int index = *(int)arg; // 스레드 인덱스
 
     rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
-    // printf("Reader %d acquired the read lock\n", index);
+    printf("Reader %d acquired the read lock\n", index);
 
     // 각 스레드의 역할에 따라 처리
     switch (index) {
@@ -135,7 +135,7 @@ void* reader(void* arg) {
     }
 
     rwlock_release_read_lock(&rwlock); // 읽기 잠금 해제
-    // printf("Reader %d released the read lock\n", index);
+    printf("Reader %d released the read lock\n", index);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
