@@ -18,31 +18,6 @@ RWLock rwlock;
 long read_times[NUM_READERS];
 long write_time;
 
-void rwlock_init(RWLock *rwlock)
-{
-    pthread_rwlock_init(&rwlock->lock, NULL);
-}
-
-void rwlock_acquire_read_lock(RWLock *rwlock)
-{
-    pthread_rwlock_rdlock(&rwlock->lock);
-}
-
-void rwlock_release_read_lock(RWLock *rwlock)
-{
-    pthread_rwlock_unlock(&rwlock->lock);
-}
-
-void rwlock_acquire_write_lock(RWLock *rwlock)
-{
-    pthread_rwlock_wrlock(&rwlock->lock);
-}
-
-void rwlock_release_write_lock(RWLock *rwlock)
-{
-    pthread_rwlock_unlock(&rwlock->lock);
-}
-
 // 합계를 계산하는 함수
 int calculate_sum(int* array, int start_index, int end_index)
 {
@@ -99,7 +74,7 @@ void* reader(void* arg) {
 
     int index = *((int*)arg); // 스레드 인덱스
 
-    rwlock_acquire_read_lock(&rwlock); // 읽기 잠금 획득
+    pthread_rwlock_rdlock(&rwlock->lock); // 읽기 잠금 획득
 
     // 각 스레드의 역할에 따라 처리
     switch (index/10) {
@@ -127,7 +102,7 @@ void* reader(void* arg) {
             break;
     }
 
-    rwlock_release_read_lock(&rwlock); // 읽기 잠금 해제
+    pthread_rwlock_unlock(&rwlock->lock); // 읽기 잠금 해제
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
@@ -140,14 +115,14 @@ void* writer(void* arg) {
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    rwlock_acquire_write_lock(&rwlock);
+    pthread_rwlock_wrlock(&rwlock->lock);
 
     for (int i = 0; i < ARRAY_SIZE; i++)
     {
         shared_array[i] = rand() % 100;
     }
 
-    rwlock_release_write_lock(&rwlock);
+    pthread_rwlock_unlock(&rwlock->lock);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;
@@ -160,7 +135,7 @@ int main() {
     pthread_t readers[NUM_READERS], writer_thread;
     struct timeval start, end;
 
-    rwlock_init(&rwlock); // RWLock 초기화
+    pthread_rwlock_init(&rwlock->lock, NULL); // RWLock 초기화
     srand(time(NULL));
 
     // 시작 시간 측정

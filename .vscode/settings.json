@@ -64,6 +64,7 @@
     "ostream": "cpp",
     "cmath": "c",
     "stdlib.h": "c",
-    "limits.h": "c"
+    "limits.h": "c",
+    "memory": "c"
   }
 }
