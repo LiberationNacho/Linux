@@ -35,7 +35,7 @@ void print_rankings() {
     printf("\n");
 }
 
-void* read_rankings_rwlock(void* arg) {
+double read_rankings_rwlock(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_rdlock(&rwlock);
@@ -43,10 +43,10 @@ void* read_rankings_rwlock(void* arg) {
     pthread_rwlock_unlock(&rwlock);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return elapsed;
 }
 
-void* write_rankings_rwlock(void* arg) {
+double write_rankings_rwlock(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_wrlock(&rwlock);
@@ -56,10 +56,10 @@ void* write_rankings_rwlock(void* arg) {
     pthread_rwlock_unlock(&rwlock);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return elapsed;
 }
 
-void* read_rankings_mutex(void* arg) {
+double read_rankings_mutex(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
@@ -67,10 +67,10 @@ void* read_rankings_mutex(void* arg) {
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return elapsed;
 }
 
-void* write_rankings_mutex(void* arg) {
+double write_rankings_mutex(void* arg) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
@@ -80,7 +80,7 @@ void* write_rankings_mutex(void* arg) {
     pthread_mutex_unlock(&mutex);
     clock_gettime(CLOCK_MONOTONIC, &end);
     double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return elapsed;
 }
 
 int main() {
@@ -122,6 +122,7 @@ int main() {
 
     printf("\nMutex:\n");
     for (int i = 0; i < iterations; i++) {
+
         double* elapsed_times[10];
         for (int j = 0; j < 5; j++) {
             pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
