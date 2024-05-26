@@ -95,7 +95,6 @@ int calculate_sum(int* array, int start_index, int end_index)
     {
         sum += array[i];
     }
-    printf("sum: %d\n", sum);
     return sum;
 }
 
@@ -110,7 +109,6 @@ int find_max(int* array, int start_index, int end_index)
             max = array[i];
         }
     }
-    printf("max: %d\n", max);
     return max;
 }
 
@@ -157,22 +155,27 @@ void* reader(void* arg) {
         case 0:
             // 합계 계산
             int sum = calculate_sum(shared_array, 0, ARRAY_SIZE);
+            printf("sum(합계): %d\n", sum);
             break;
         case 1:
             // 최대값 계산
             int max = find_max(shared_array, 0, ARRAY_SIZE);
+            printf("max(최대값): %d\n", max);
             break;
         case 2:
             // 평균 계산
             double average = calculate_average(shared_array, 0, ARRAY_SIZE);
+            printf("average(평균): %.2f\n", average);
             break;
         case 3:
             // 분산 계산
             double variance = calculate_variance(shared_array, 0, ARRAY_SIZE);
+            printf("variance(분산): %.2f\n", variance);
             break;
         case 4:
             // 표준편차 계산
             double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE));
+            printf("standard deviation(표준편차): %.2f\n", stddev);
             break;
         default:
             break;
