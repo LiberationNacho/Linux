@@ -1,0 +1,20 @@
+@startuml
+[*] --> Unlocked
+
+Unlocked --> ReadLocked : rwlock_acquire_read_lock()
+ReadLocked --> Unlocked : rwlock_release_read_lock()
+
+Unlocked --> WriteLocked : rwlock_acquire_write_lock()
+WriteLocked --> Unlocked : rwlock_release_write_lock()
+
+state ReadLocked {
+    [*] --> Reader
+    Reader --> Reader : rwlock_acquire_read_lock()
+    Reader --> [*] : rwlock_release_read_lock()
+}
+
+state WriteLocked {
+    [*] --> Writer
+    Writer --> [*] : rwlock_release_write_lock()
+}
+@enduml

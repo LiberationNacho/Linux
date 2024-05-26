@@ -1,0 +1,24 @@
+@startuml
+actor Main
+
+Main -> RWLock : rwlock_init()
+Main -> ReaderThread : create 20 reader threads
+Main -> WriterThread : create 5 writer threads
+
+group Reader Threads
+    ReaderThread -> RWLock : rwlock_acquire_read_lock()
+    ReaderThread -> SharedResource : read data
+    ReaderThread -> RWLock : rwlock_release_read_lock()
+end
+
+group Writer Threads
+    WriterThread -> RWLock : rwlock_acquire_write_lock()
+    WriterThread -> SharedResource : write data
+    WriterThread -> RWLock : rwlock_release_write_lock()
+end
+
+Main -> ReaderThread : join 20 reader threads
+Main -> WriterThread : join 5 writer threads
+
+Main -> Main : calculate and print total time
+@enduml
