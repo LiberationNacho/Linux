@@ -12,7 +12,7 @@ double rwlock_total_time = 0; // RWLock을 사용한 읽기 작업의 총 시간
 double mutex_total_time = 0; // Mutex를 사용한 읽기 작업의 총 시간을 저장하는 변수
 
 // 읽기 작업을 수행하는 스레드 함수
-void* read_clear_time(void* arg) {
+void* read_time_rw(void* arg) {
     // RWLock으로 보호된 읽기 작업
     struct timespec start_rw, end_rw;
     clock_gettime(CLOCK_MONOTONIC, &start_rw); // 읽기 작업 시작 시간 기록
@@ -24,6 +24,10 @@ void* read_clear_time(void* arg) {
     double rwlock_time = (end_rw.tv_sec - start_rw.tv_sec) + (end_rw.tv_nsec - start_rw.tv_nsec) / 1e9; // RWLock을 사용한 읽기 작업에 소요된 시간 계산
     rwlock_total_time += rwlock_time; // RWLock을 사용한 읽기 작업의 총 시간에 누적
 
+    return NULL;
+}
+
+void* read_time_mu(void* arg) {
     // Mutex로 보호된 읽기 작업
     struct timespec start_mutex, end_mutex;
     clock_gettime(CLOCK_MONOTONIC, &start_mutex); // 읽기 작업 시작 시간 기록
@@ -37,7 +41,6 @@ void* read_clear_time(void* arg) {
 
     return NULL;
 }
-
 int main() {
     pthread_t readers[NUM_READERS];
 
@@ -50,7 +53,17 @@ int main() {
 
     // 읽기 스레드 생성 및 실행
     for (int i = 0; i < NUM_READERS; ++i) {
-        pthread_create(&readers[i], NULL, read_clear_time, NULL);
+        pthread_create(&readers[i], NULL, read_time_rw, NULL);
+    }
+
+    // 읽기 스레드 종료 대기
+    for (int i = 0; i < NUM_READERS; ++i) {
+        pthread_join(readers[i], NULL);
+    }
+
+    // 읽기 스레드 생성 및 실행
+    for (int i = 0; i < NUM_READERS; ++i) {
+        pthread_create(&readers[i], NULL, read_time_mu, NULL);
     }
 
     // 읽기 스레드 종료 대기
