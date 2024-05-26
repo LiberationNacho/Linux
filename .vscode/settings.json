@@ -63,6 +63,7 @@
     "iostream": "cpp",
     "ostream": "cpp",
     "cmath": "c",
-    "stdlib.h": "c"
+    "stdlib.h": "c",
+    "limits.h": "c"
   }
 }

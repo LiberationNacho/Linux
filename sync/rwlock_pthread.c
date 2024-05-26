@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <math.h>
 
-#define NUM_READERS 5
+#define NUM_READERS 50
 #define ARRAY_SIZE 1000000
 int shared_array[ARRAY_SIZE];
 

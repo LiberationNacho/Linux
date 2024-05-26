@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define ARRAY_SIZE 1000000
-#define NUM_READERS 5
+#define NUM_READERS 50
 
 typedef struct {
     pthread_mutex_t mutex;
