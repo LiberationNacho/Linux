@@ -1,48 +1,51 @@
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <limits.h>
+#include <math.h>
 
-// 공유 자원
 #define ARRAY_SIZE 100
-int shared_array[ARRAY_SIZE];
+#define NUM_READERS 20
+#define NUM_WRITERS 5
 
-// RWLock 구조체 정의
 typedef struct {
-    pthread_mutex_t mutex;    // 뮤텍스를 사용하여 동기화
-    pthread_cond_t cond;      // 조건 변수를 사용하여 대기 및 신호 처리
-    int readers;              // 현재 읽기 잠금을 보유한 스레드 수
-    int writers;              // 현재 쓰기 잠금을 보유한 스레드 수
-    int pending_writers;      // 대기 중인 쓰기 잠금을 요청한 스레드 수
+    pthread_mutex_t mutex;
+    pthread_cond_t readers_proceed;
+    pthread_cond_t writers_proceed;
+    int pending_writers;
+    int readers;
+    int writers;
 } RWLock;
+
+int shared_array[ARRAY_SIZE];
 
 // RWLock 초기화 함수
 void rwlock_init(RWLock *rwlock) {
+    pthread_mutex_init(&rwlock->mutex, NULL);
+    pthread_cond_init(&rwlock->readers_proceed, NULL);
+    pthread_cond_init(&rwlock->writers_proceed, NULL);
+    rwlock->pending_writers = 0;
     rwlock->readers = 0;
     rwlock->writers = 0;
-    rwlock->pending_writers = 0;
-    pthread_mutex_init(&rwlock->mutex, NULL);
-    pthread_cond_init(&rwlock->cond, NULL);
 }
 
 // 읽기 잠금 획득 함수
 void rwlock_acquire_read_lock(RWLock *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
-    while (rwlock->writers > 0 || rwlock->pending_writers > 0) {
-        pthread_cond_wait(&rwlock->cond, &rwlock->mutex); // 쓰기 작업 중이거나 대기 중인 쓰기 작업이 있는 경우 대기
+    while (rwlock->pending_writers > 0 || rwlock->writers > 0) {
+        pthread_cond_wait(&rwlock->readers_proceed, &rwlock->mutex);
     }
-    rwlock->readers++; // 읽기 잠금을 획득한 스레드 수 증가
+    rwlock->readers++;
     pthread_mutex_unlock(&rwlock->mutex);
 }
 
 // 읽기 잠금 해제 함수
 void rwlock_release_read_lock(RWLock *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
-    rwlock->readers--; // 읽기 잠금을 해제한 스레드 수 감소
-    if (rwlock->readers == 0) {
-        pthread_cond_signal(&rwlock->cond); // 읽기 잠금 해제 후 조건 변수 신호 보내기
+    rwlock->readers--;
+    if (rwlock->readers == 0 && rwlock->pending_writers > 0) {
+        pthread_cond_signal(&rwlock->writers_proceed);
     }
     pthread_mutex_unlock(&rwlock->mutex);
 }
@@ -50,27 +53,26 @@ void rwlock_release_read_lock(RWLock *rwlock) {
 // 쓰기 잠금 획득 함수
 void rwlock_acquire_write_lock(RWLock *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
-    rwlock->pending_writers++; // 대기 중인 쓰기 잠금 요청 수 증가
+    rwlock->pending_writers++;
     while (rwlock->readers > 0 || rwlock->writers > 0) {
-        pthread_cond_wait(&rwlock->cond, &rwlock->mutex); // 읽기 작업 중이거나 다른 쓰기 작업이 있는 경우 대기
+        pthread_cond_wait(&rwlock->writers_proceed, &rwlock->mutex);
     }
-    rwlock->pending_writers--; // 쓰기 잠금 요청 수 감소
-    rwlock->writers++; // 쓰기 잠금을 획득한 스레드 수 증가
+    rwlock->pending_writers--;
+    rwlock->writers++;
     pthread_mutex_unlock(&rwlock->mutex);
 }
 
 // 쓰기 잠금 해제 함수
 void rwlock_release_write_lock(RWLock *rwlock) {
     pthread_mutex_lock(&rwlock->mutex);
-    rwlock->writers--; // 쓰기 잠금을 해제한 스레드 수 감소
-    pthread_cond_broadcast(&rwlock->cond); // 조건 변수에 대기 중인 모든 스레드에게 신호 보내기
+    rwlock->writers--;
+    if (rwlock->pending_writers > 0) {
+        pthread_cond_signal(&rwlock->writers_proceed);
+    } else {
+        pthread_cond_broadcast(&rwlock->readers_proceed);
+    }
     pthread_mutex_unlock(&rwlock->mutex);
 }
-
-// 테스트 코드
-RWLock rwlock;
-long read_times[20];
-long write_times[5];
 
 // 읽기 스레드 함수
 void* reader(void* arg) {
@@ -82,7 +84,7 @@ void* reader(void* arg) {
 
     // 공유 자원을 읽는 작업 수행 (복잡한 작업)
     int sum = 0, max = INT_MIN;
-    double average = 0.0;
+    double average = 0.0, variance = 0.0, stddev = 0.0;
     for (int i = 0; i < ARRAY_SIZE; i++) {
         sum += shared_array[i];
         if (shared_array[i] > max) {
@@ -90,9 +92,15 @@ void* reader(void* arg) {
         }
     }
     average = (double)sum / ARRAY_SIZE;
+    
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        variance += (shared_array[i] - average) * (shared_array[i] - average);
+    }
+    variance /= ARRAY_SIZE;
+    stddev = sqrt(variance);
 
     rwlock_release_read_lock(&rwlock);
-    printf("Reader %ld released the read lock (sum: %d, max: %d, avg: %.2f)\n", (long)arg, sum, max, average);
+    printf("Reader %ld released the read lock (sum: %d, max: %d, avg: %.2f, stddev: %.2f)\n", (long)arg, sum, max, average, stddev);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;

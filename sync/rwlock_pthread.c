@@ -54,7 +54,7 @@ void* reader(void* arg) {
 
     // 공유 자원을 읽는 작업 수행 (복잡한 작업)
     int sum = 0, max = INT_MIN;
-    double average = 0.0;
+    double average = 0.0, variance = 0.0, stddev = 0.0;
     for (int i = 0; i < ARRAY_SIZE; i++) {
         sum += shared_array[i];
         if (shared_array[i] > max) {
@@ -62,9 +62,15 @@ void* reader(void* arg) {
         }
     }
     average = (double)sum / ARRAY_SIZE;
+    
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        variance += (shared_array[i] - average) * (shared_array[i] - average);
+    }
+    variance /= ARRAY_SIZE;
+    stddev = sqrt(variance);
 
     rwlock_release_read_lock(&rwlock);
-    printf("Reader %ld released the read lock (sum: %d, max: %d, avg: %.2f)\n", (long)arg, sum, max, average);
+    printf("Reader %ld released the read lock (sum: %d, max: %d, avg: %.2f, stddev: %.2f)\n", (long)arg, sum, max, average, stddev);
 
     gettimeofday(&end, NULL);
     long seconds = end.tv_sec - start.tv_sec;

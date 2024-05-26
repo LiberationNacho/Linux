@@ -1,18 +1,18 @@
 @startuml
 start
-:Initialize RWLock;
+:Initialize Mutex-based RWLock;
 :Create Reader and Writer Threads;
 
 partition Readers {
     :Acquire Read Lock;
-    :Read Data;
+    :Calculate sum, max, average, variance, stddev;
     :Release Read Lock;
     :Store Read Time;
 }
 
 partition Writers {
     :Acquire Write Lock;
-    :Write Data;
+    :Initialize and Validate Data;
     :Release Write Lock;
     :Store Write Time;
 }
