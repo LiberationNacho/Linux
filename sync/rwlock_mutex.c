@@ -172,7 +172,7 @@ void* reader(void* arg) {
             break;
         case 4:
             // 표준편차 계산
-            double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE););
+            double stddev = calculate_stddev(calculate_variance(shared_array, 0, ARRAY_SIZE));
             break;
         default:
             break;
