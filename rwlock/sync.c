@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define NUM_READERS 1000 // 읽기 스레드 수를 늘림
+#define NUM_READERS 1000 // 읽기 스레드 수
 
 pthread_rwlock_t rwlock;
 pthread_mutex_t mutex;
@@ -38,26 +38,8 @@ void* read_clear_time(void* arg) {
     return NULL;
 }
 
-// 쓰기 작업을 수행하는 스레드 함수
-void* simulate_game_clear(void* arg) {
-    // RWLock으로 보호된 쓰기 작업
-    pthread_rwlock_wrlock(&rwlock); // RWLock 쓰기 잠금 획득
-    // 쓰기 작업 시뮬레이션을 위해 임의의 딜레이 추가
-    usleep(1000); // 1ms
-    pthread_rwlock_unlock(&rwlock); // RWLock 쓰기 잠금 해제
-
-    // Mutex로 보호된 쓰기 작업
-    pthread_mutex_lock(&mutex); // Mutex 잠금 획득
-    // 쓰기 작업 시뮬레이션을 위해 임의의 딜레이 추가
-    usleep(1000); // 1ms
-    pthread_mutex_unlock(&mutex); // Mutex 잠금 해제
-
-    return NULL;
-}
-
 int main() {
     pthread_t readers[NUM_READERS];
-    pthread_t game_clearer;
 
     // 시드 설정
     srand(time(NULL));
