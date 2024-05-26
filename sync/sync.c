@@ -16,16 +16,12 @@ void* read_rankings_mutex(void* arg);
 void* write_rankings_mutex(void* arg);
 
 void initialize_rankings();
-double get_time_diff(struct timespec start, struct timespec end);
+void print_rankings();
 
 void initialize_rankings() {
     for (int i = 0; i < NUM_RANKINGS; i++) {
         rankings[i] = rand() % 100;
     }
-}
-
-double get_time_diff(struct timespec start, struct timespec end) {
-    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 }
 
 void print_rankings() {
@@ -36,51 +32,39 @@ void print_rankings() {
 }
 
 void* read_rankings_rwlock(void* arg) {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_rdlock(&rwlock);
+    printf("RWLock Read: ");
     print_rankings();
     pthread_rwlock_unlock(&rwlock);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return NULL;
 }
 
 void* write_rankings_rwlock(void* arg) {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_rwlock_wrlock(&rwlock);
     int index = rand() % NUM_RANKINGS;
     int value = rand() % 100;
     rankings[index] = value;
+    printf("RWLock Write: Updated index %d with value %d\n", index, value);
     pthread_rwlock_unlock(&rwlock);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return NULL;
 }
 
 void* read_rankings_mutex(void* arg) {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
+    printf("Mutex Read: ");
     print_rankings();
     pthread_mutex_unlock(&mutex);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return NULL;
 }
 
 void* write_rankings_mutex(void* arg) {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
     pthread_mutex_lock(&mutex);
     int index = rand() % NUM_RANKINGS;
     int value = rand() % 100;
     rankings[index] = value;
+    printf("Mutex Write: Updated index %d with value %d\n", index, value);
     pthread_mutex_unlock(&mutex);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double elapsed = get_time_diff(start, end);
-    return (void*)elapsed;
+    return NULL;
 }
 
 int main() {
@@ -91,59 +75,30 @@ int main() {
     pthread_mutex_init(&mutex, NULL);
 
     pthread_t threads[20];
-    double total_rwlock_read_time = 0.0;
-    double total_rwlock_write_time = 0.0;
-    double total_mutex_read_time = 0.0;
-    double total_mutex_write_time = 0.0;
-    int iterations = 10000;
 
-    printf("RWLock:\n");
-    for (int i = 0; i < iterations; i++) {
-        double elapsed_times[10]; // 변경된 부분
-
-        for (int j = 0; j < 5; j++) {
-            pthread_create(&threads[j], NULL, read_rankings_rwlock, NULL);
-        }
-        for (int j = 5; j < 10; j++) {
-            pthread_create(&threads[j], NULL, write_rankings_rwlock, NULL);
-        }
-        for (int j = 0; j < 10; j++) {
-            pthread_join(threads[j], (void**)&elapsed_times[j]); // 변경된 부분
-        }
-        for (int j = 0; j < 5; j++) {
-            total_rwlock_read_time += elapsed_times[j];
-        }
-        for (int j = 5; j < 10; j++) {
-            total_rwlock_write_time += elapsed_times[j];
-        }
+    // RWLock 사용
+    printf("Using RWLock:\n");
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, read_rankings_rwlock, NULL);
+    }
+    for (int i = 5; i < 10; i++) {
+        pthread_create(&threads[i], NULL, write_rankings_rwlock, NULL);
+    }
+    for (int i = 0; i < 10; i++) {
+        pthread_join(threads[i], NULL);
     }
 
-    printf("Average Read Time: %.6f seconds\n", total_rwlock_read_time / (5 * iterations));
-    printf("Average Write Time: %.6f seconds\n", total_rwlock_write_time / (5 * iterations));
-
-    printf("\nMutex:\n");
-    for (int i = 0; i < iterations; i++) {
-        double elapsed_times[10]; // 변경된 부분
-
-        for (int j = 0; j < 5; j++) {
-            pthread_create(&threads[j], NULL, read_rankings_mutex, NULL);
-        }
-        for (int j = 5; j < 10; j++) {
-            pthread_create(&threads[j], NULL, write_rankings_mutex, NULL);
-        }
-        for (int j = 0; j < 10; j++) {
-            pthread_join(threads[j], (void**)&elapsed_times[j]); // 변경된 부분
-        }
-        for (int j = 0; j < 5; j++) {
-            total_mutex_read_time += elapsed_times[j];
-        }
-        for (int j = 5; j < 10; j++) {
-            total_mutex_write_time += elapsed_times[j];
-        }
+    // Mutex 사용
+    printf("\nUsing Mutex:\n");
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&threads[i], NULL, read_rankings_mutex, NULL);
     }
-
-    printf("Average Read Time: %.6f seconds\n", total_mutex_read_time / (5 * iterations));
-    printf("Average Write Time: %.6f seconds\n", total_mutex_write_time / (5 * iterations));
+    for (int i = 5; i < 10; i++) {
+        pthread_create(&threads[i], NULL, write_rankings_mutex, NULL);
+    }
+    for (int i = 0; i < 10; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
     pthread_rwlock_destroy(&rwlock);
     pthread_mutex_destroy(&mutex);
