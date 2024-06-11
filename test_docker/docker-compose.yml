@@ -1,0 +1,27 @@
+version: '3'
+services:
+  server:
+    build: .
+    container_name: chat_server
+    command: ./server
+    ports:
+      - "8080:8080"
+  client1:
+    build: .
+    container_name: chat_client1
+    command: ./client
+    depends_on:
+      - server
+  client2:
+    build: .
+    container_name: chat_client2
+    command: ./client
+    depends_on:
+      - server
+  client3:
+    build: .
+    container_name: chat_client3
+    command: ./client
+    depends_on:
+      - server
+
