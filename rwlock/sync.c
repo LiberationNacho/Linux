@@ -18,7 +18,7 @@ void* read_time_rw(void* arg) {
     clock_gettime(CLOCK_MONOTONIC, &start_rw); // 읽기 작업 시작 시간 기록
     pthread_rwlock_rdlock(&rwlock); // RWLock 읽기 잠금 획득
     // 읽기 작업 시뮬레이션을 위해 임의의 딜레이 추가
-    usleep(1000); // 1ms
+    usleep(10);
     pthread_rwlock_unlock(&rwlock); // RWLock 읽기 잠금 해제
     clock_gettime(CLOCK_MONOTONIC, &end_rw); // 읽기 작업 종료 시간 기록
     double rwlock_time = (end_rw.tv_sec - start_rw.tv_sec) + (end_rw.tv_nsec - start_rw.tv_nsec) / 1e9; // RWLock을 사용한 읽기 작업에 소요된 시간 계산
@@ -33,7 +33,7 @@ void* read_time_mu(void* arg) {
     clock_gettime(CLOCK_MONOTONIC, &start_mutex); // 읽기 작업 시작 시간 기록
     pthread_mutex_lock(&mutex); // Mutex 잠금 획득
     // 읽기 작업 시뮬레이션을 위해 임의의 딜레이 추가
-    usleep(1000); // 1ms
+    usleep(10);
     pthread_mutex_unlock(&mutex); // Mutex 잠금 해제
     clock_gettime(CLOCK_MONOTONIC, &end_mutex); // 읽기 작업 종료 시간 기록
     double mutex_time = (end_mutex.tv_sec - start_mutex.tv_sec) + (end_mutex.tv_nsec - start_mutex.tv_nsec) / 1e9; // Mutex를 사용한 읽기 작업에 소요된 시간 계산
