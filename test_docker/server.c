@@ -107,7 +107,11 @@ void *handle_client(void *arg) {
         char *message = (char*)malloc(message_len);
         if (message != NULL) {
             snprintf(message, message_len, "%s: %s", client->name, buffer);
-            printf("%s", message); // 서버 콘솔에 출력
+
+            // 서버 콘솔에 클라이언트가 보낸 메시지 출력
+            printf("%s", message);
+
+            // 모든 클라이언트에게 메시지 전송
             send_message(message, client);
             free(message);
         }
