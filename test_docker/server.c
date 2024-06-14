@@ -10,6 +10,7 @@
 #define MAX_CLIENTS 100
 #define BUFFER_SIZE 2048
 #define NAME_SIZE 32
+#define THREAD_POOL_SIZE 4 // 스레드 풀 크기
 
 // 클라이언트 정보를 담을 구조체 정의
 typedef struct {
@@ -20,9 +21,18 @@ typedef struct {
 client_t *clients[MAX_CLIENTS]; // 클라이언트 리스트
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER; // 클라이언트 리스트 보호용 뮤텍스
 
+pthread_t thread_pool[THREAD_POOL_SIZE]; // 스레드 풀
+pthread_cond_t condition_var = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t condition_mutex = PTHREAD_MUTEX_INITIALIZER;
+client_t *client_queue[MAX_CLIENTS]; // 클라이언트 큐
+int queue_size = 0;
+
 void *handle_client(void *arg); // 클라이언트 처리 함수 (스레드 함수)
 void send_message(char *message, client_t *exclude_client); // 메시지 전송 함수
 void signal_handler(int sig); // 시그널 핸들러 함수
+void *thread_function(void *arg); // 스레드 풀에서 사용할 함수
+void enqueue_client(client_t *client); // 클라이언트를 큐에 추가
+client_t *dequeue_client(); // 큐에서 클라이언트를 꺼내기
 
 int main() {
     int server_socket, client_socket;
@@ -59,6 +69,11 @@ int main() {
 
     printf("Chat server started on port %d\n", PORT);
 
+    // 스레드 풀 생성
+    for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+        pthread_create(&thread_pool[i], NULL, thread_function, NULL);
+    }
+
     // 클라이언트 연결 대기
     while (1) {
         client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_addr_len);
@@ -75,8 +90,7 @@ int main() {
                 new_client->socket = client_socket;
                 recv(client_socket, new_client->name, NAME_SIZE, 0); // 클라이언트 이름 수신
                 clients[i] = new_client;
-                pthread_t tid;
-                pthread_create(&tid, NULL, handle_client, (void*)new_client);
+                enqueue_client(new_client);
                 break;
             }
         }
@@ -85,6 +99,41 @@ int main() {
 
     close(server_socket);
     return 0;
+}
+
+// 클라이언트를 큐에 추가하는 함수
+void enqueue_client(client_t *client) {
+    pthread_mutex_lock(&condition_mutex);
+    client_queue[queue_size++] = client;
+    pthread_cond_signal(&condition_var);
+    pthread_mutex_unlock(&condition_mutex);
+}
+
+// 큐에서 클라이언트를 꺼내는 함수
+client_t *dequeue_client() {
+    client_t *client = client_queue[0];
+    for (int i = 1; i < queue_size; i++) {
+        client_queue[i - 1] = client_queue[i];
+    }
+    queue_size--;
+    return client;
+}
+
+// 스레드 풀에서 사용할 함수
+void *thread_function(void *arg) {
+    while (1) {
+        pthread_mutex_lock(&condition_mutex);
+        while (queue_size == 0) {
+            pthread_cond_wait(&condition_var, &condition_mutex);
+        }
+        client_t *client = dequeue_client();
+        pthread_mutex_unlock(&condition_mutex);
+
+        if (client != NULL) {
+            handle_client(client);
+        }
+    }
+    return NULL;
 }
 
 // 클라이언트 처리 함수 (스레드 함수)
@@ -153,4 +202,3 @@ void signal_handler(int sig) {
     printf("Shutting down server...\n");
     exit(0);
 }
-
