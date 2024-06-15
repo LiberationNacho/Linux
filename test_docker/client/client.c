@@ -16,12 +16,18 @@ char name[NAME_SIZE]; // 클라이언트 이름
 void *receive_handler(void *socket_desc); // 메시지 수신 처리 함수
 void signal_handler(int sig); // 시그널 핸들러 함수
 
-int main() {
+int main(int argc, char *argv[]) {
     struct sockaddr_in server_addr;
     pthread_t receive_thread;
 
     // SIGINT(CTRL+C) 시그널 처리
     signal(SIGINT, signal_handler);
+
+    // 인자가 충분하지 않을 경우 사용법 출력
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <server_ip>\n", argv[0]);
+        return 1;
+    }
 
     // 클라이언트 소켓 생성
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,7 +37,11 @@ int main() {
     }
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    // 서버 주소 설정
+    if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0) {
+        perror("Invalid address/ Address not supported");
+        return 1;
+    }
     server_addr.sin_port = htons(PORT);
 
     // 서버에 연결
@@ -71,15 +81,27 @@ void *receive_handler(void *socket_desc) {
     int read_size;
     while ((read_size = recv(sock, buffer, BUFFER_SIZE, 0)) > 0) {
         buffer[read_size] = '\0';
-        printf("%s", buffer); // 수신한 메시지 출력
+        fputs(buffer, stdout); // 수신한 메시지 출력
     }
     return NULL;
 }
 
 // 클라이언트 종료 처리 함수
 void signal_handler(int sig) {
-    printf("Disconnecting from server...\n");
-    close(client_socket);
-    exit(0);
-}
+    char c;
+    printf("종료하시겠습니까? (y/n)\n");
+    scanf(" %c", &c); // 공백을 포함하여 한 문자를 입력받음
 
+    if (c == 'y' || c == 'Y')
+    {
+        printf("Shutting down client...\n");
+        pthread_cancel(receive_thread); // 수신 스레드 종료
+        close(client_socket); // 소켓 닫기
+        exit(0); // 프로그램을 종료
+    }
+    else
+    {
+        // 다른 입력은 아무런 동작도 하지 않고 함수를 종료
+        return;
+    }
+}

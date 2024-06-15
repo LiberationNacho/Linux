@@ -199,6 +199,18 @@ void send_message(char *message, client_t *exclude_client) {
 
 // 서버 종료 처리 함수
 void signal_handler(int sig) {
-    printf("Shutting down server...\n");
-    exit(0);
+    char c;
+    printf("종료하시겠습니까? (y/n)\n");
+    scanf(" %c", &c); // 공백을 포함하여 한 문자를 입력받음
+
+    if (c == 'y' || c == 'Y')
+    {
+        printf("Shutting down client...\n");
+        exit(0); // 프로그램을 종료
+    }
+    else
+    {
+        // 다른 입력은 아무런 동작도 하지 않고 함수를 종료
+        return;
+    }
 }
