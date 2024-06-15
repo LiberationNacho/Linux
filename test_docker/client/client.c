@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    printf("Client start\n");
+    
     // 클라이언트 이름 입력 및 서버에 전송
     printf("Enter your name: ");
     fgets(name, NAME_SIZE, stdin);
@@ -81,12 +83,12 @@ void *receive_handler(void *socket_desc) {
     int read_size;
     while ((read_size = recv(sock, buffer, BUFFER_SIZE, 0)) > 0) {
         buffer[read_size] = '\0';
-        fputs(buffer, stdout); // 수신한 메시지 출력
+        printf("%s", buffer); // 수신한 메시지 출력
     }
     return NULL;
 }
 
-// 클라이언트 종료 처리 함수
+// 서버 종료 처리 함수
 void signal_handler(int sig) {
     char c;
     printf("종료하시겠습니까? (y/n)\n");
@@ -95,8 +97,6 @@ void signal_handler(int sig) {
     if (c == 'y' || c == 'Y')
     {
         printf("Shutting down client...\n");
-        pthread_cancel(receive_thread); // 수신 스레드 종료
-        close(client_socket); // 소켓 닫기
         exit(0); // 프로그램을 종료
     }
     else

@@ -67,7 +67,10 @@ int main() {
         return 1;
     }
 
+    printf("Server start..\n");
     printf("Chat server started on port %d\n", PORT);
+
+
 
     // 스레드 풀 생성
     for (int i = 0; i < THREAD_POOL_SIZE; i++) {
@@ -143,7 +146,7 @@ void *handle_client(void *arg) {
     int read_size;
 
     // 연결된 클라이언트의 참여 알림
-    snprintf(buffer, sizeof(buffer), "%s has joined\n", client->name);
+    snprintf(buffer, sizeof(buffer), "--- 새로운 사용자 : %s이 들어왔습니다. ---\n", client->name);
     printf("%s", buffer); // 서버 콘솔에 출력
     send_message(buffer, client);
 
@@ -178,7 +181,7 @@ void *handle_client(void *arg) {
     }
     pthread_mutex_unlock(&clients_mutex);
 
-    snprintf(buffer, sizeof(buffer), "%s has left\n", client->name);
+    snprintf(buffer, sizeof(buffer), "------사용자 %s님이 나갔습니다.-----\n", client->name);
     printf("%s", buffer); // 서버 콘솔에 출력
     send_message(buffer, client);
 
@@ -205,7 +208,7 @@ void signal_handler(int sig) {
 
     if (c == 'y' || c == 'Y')
     {
-        printf("Shutting down client...\n");
+        printf("Shutting down server...\n");
         exit(0); // 프로그램을 종료
     }
     else

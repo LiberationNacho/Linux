@@ -20,4 +20,4 @@ COPY client.c .
 RUN gcc -o client client.c -pthread
 
 # 실행 명령어 설정
-CMD ["./client"]
+# CMD ["./client", "172.18.0.2"]

@@ -27,4 +27,4 @@ RUN gcc -o server server.c -lpthread
 EXPOSE 8080
 
 # 실행 명령어 설정
-CMD ["./server"]
+# CMD ["./server"]
